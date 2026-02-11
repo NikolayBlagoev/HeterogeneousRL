@@ -63,7 +63,7 @@ def per_token_log_probs(logits,targets,is_logits_log = False, mem_eff = True):
 
 @torch.no_grad()
 def advantage_compute(rewards, std_scale = True):
-    advantages = (returns - returns.mean()) 
+    advantages = (rewards - rewards.mean()) 
     if rewards.shape[1] > 1 and std_scale:
         advantages /= (rewards.std() + 1e-8)
     return advantages
