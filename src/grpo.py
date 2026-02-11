@@ -73,13 +73,14 @@ def sequences_log_probs(model, sequence_ids, attention_mask, logits_to_keep=None
     
     if batch_size == None:
         batch_size = sequence_ids.shape[0]
+    model_arg_logits = None
     if logits_to_keep != None:
-        logits_to_keep += 1
+        model_arg_logits = logits_to_keep + 1
     out = 0
     for start in range(0,sequence_ids.shape[0], batch_size):
         _loc_sequence_ids = sequence_ids[start: start + batch_size]
         _loc_attention_mask = attention_mask[start: start + batch_size]
-        logits = model(input_ids=_loc_sequence_ids, attention_mask=_loc_attention_mask,use_cache=False,logits_to_keep=logits_to_keep).logits 
+        logits = model(input_ids=_loc_sequence_ids, attention_mask=_loc_attention_mask,use_cache=False,logits_to_keep=model_arg_logits).logits 
 
         # Remove last one (hallucinated)
         logits = logits[:, :-1, :]
