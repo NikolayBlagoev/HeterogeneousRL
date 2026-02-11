@@ -116,9 +116,9 @@ for k, prompt_batch in enumerate(prompt_loader):
             if len(replay_buffer) == 0:
                 print(f"{completions[0]}")
                 # print(f"{completions[1]}")
-                
-            sequence_ids = torch.cat((prompt_ids,completion_ids),dim=0)
-            attention_mask = torch.cat((prompt_mask, completion_mask), dim = 0)
+            # print(prom)
+            sequence_ids = torch.cat((prompt_ids,completion_ids),dim=1)
+            attention_mask = torch.cat((prompt_mask, completion_mask), dim = 1)
             seq_log_probs = sequences_log_probs(
                         model, sequence_ids=sequence_ids, attention_mask=attention_mask,
                         logits_to_keep=completion_ids.shape[1]
