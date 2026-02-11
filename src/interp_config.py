@@ -44,7 +44,7 @@ def process_config(config, ds_seed, device_index = 0):
 
     return {
         "model_name": model_name,
-        "dl_benign": dl_benign,
+        "dl_benign": dl,
         "val_loader": val_loader,
         "group_size": group_size,
         "batch_size": batch_size,
