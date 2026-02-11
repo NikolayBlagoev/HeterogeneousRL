@@ -69,7 +69,7 @@ def advantage_compute(rewards, std_scale = True):
     return advantages
 
 # computes the log probs
-def sequences_log_probs(model, sequence_ids, attention_mask,  completion_start, logits_to_keep=None, temperature = 1.0, batch_size = None):
+def sequences_log_probs(model, sequence_ids, attention_mask, logits_to_keep=None, temperature = 1.0, batch_size = None):
     
     if batch_size == None:
         batch_size = sequence_ids.shape[0]
@@ -144,7 +144,7 @@ def grpo_train_loop(model, optimizer, replay_buffer, grpo_config: GRPOConfig, re
             # Compute log probs
             log_probs = sequences_log_probs(
                         model, sequence_ids=exp.sequence_ids[rng[0]:rng[1],:], attention_mask=exp.attention_mask[rng[0]:rng[1],:],
-                        completion_start=exp.start_ids, logits_to_keep=exp.logits_to_keep
+                        logits_to_keep=exp.logits_to_keep
             )
             # Use ref log probs to compute kl-divergence:
 
