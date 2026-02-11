@@ -11,7 +11,7 @@ from coms import setup_comms, gather
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from generate_rollouts import generate_rollouts
-from utils import trim_, Experience
+
 from grpo import sequences_log_probs, Experience,grpo_loss, grpo_train_loop, advantage_compute, GRPOConfig
 from datasets import load_dataset
 from interp_config import process_config
