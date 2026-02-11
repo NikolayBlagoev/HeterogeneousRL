@@ -1,7 +1,7 @@
 """
 The actual GRPO 
 """
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 import torch
 import torch.nn.functional as F
 from typing import Any, Iterator, Optional,List
