@@ -98,7 +98,9 @@ for k, prompt_batch in enumerate(prompt_loader):
     comm_times = 0
 
     with torch.no_grad():
-        for idx,q, s, a in enumerate(zip(questions, solutions, answers)):
+        idx = -1
+        for q, s, a in zip(questions, solutions, answers):
+            idx += 1
             if comm_style == "vertical" and idx % device_index != 0:
                 continue
             
