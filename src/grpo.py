@@ -76,7 +76,7 @@ def sequences_log_probs(model, sequence_ids, attention_mask, logits_to_keep=None
     model_arg_logits = None
     if logits_to_keep != None:
         model_arg_logits = logits_to_keep + 1
-    out = 0
+    out = []
     for start in range(0,sequence_ids.shape[0], batch_size):
         _loc_sequence_ids = sequence_ids[start: start + batch_size]
         _loc_attention_mask = attention_mask[start: start + batch_size]
