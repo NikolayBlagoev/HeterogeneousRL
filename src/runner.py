@@ -89,7 +89,7 @@ replay_buffer = []
 global_counter = 0
 
 for k, prompt_batch in enumerate(prompt_loader):
-    if k == 100:
+    if k == 21:
         break
     rollout_returns = []
     rollout_indv = []

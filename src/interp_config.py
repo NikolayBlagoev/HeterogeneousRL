@@ -24,8 +24,9 @@ def process_config(config, ds_seed, device_index = 0):
     with open(config,"r") as fd:
         tmp = json.load(fd)
     
-    model_name = tmp["model_name"][device_index]
+    
     world_size = len(tmp["model_name"])
+    model_name = tmp["model_name"][device_index % world_size]
     group_size = int(tmp["group_size"])
     batch_size = int(tmp["batch_size"])
     comm_style = tmp["comm_style"]
