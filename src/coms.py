@@ -1,5 +1,5 @@
 import torch.distributed as dist
-import torch.nn.functional as f
+import torch.nn.functional as F
 import torch
 import os
 

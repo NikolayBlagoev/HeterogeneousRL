@@ -55,8 +55,9 @@ reward_func = scenario["reward_func"]
 device = f"cuda:{device_index}"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 tokenizer.pad_token = tokenizer.eos_token
+tokenizer.pad_token_id = tokenizer.eos_token_id
 pad_token_id = tokenizer.eos_token_id
-model = AutoModelForCausalLM.from_pretrained(model_name, device_map=device,attn_implementation="kernels-community/flash-attn2")
+model = AutoModelForCausalLM.from_pretrained(model_name, device_map=device,attn_implementation="kernels-community/flash-attn3", torch_dtype=torch.float32)
 # model.gradient_checkpointing_enable(
 #     gradient_checkpointing_kwargs={"use_reentrant": False}
 # )
@@ -97,22 +98,22 @@ for k, prompt_batch in enumerate(prompt_loader):
     generation_times = 0
     comm_times = 0
 
-    with torch.no_grad():
+    with (torch.no_grad(), torch.autocast(device_type="cuda", dtype=torch.bfloat16, enabled=True)):
         idx = -1
         for q, s, a in zip(questions, solutions, answers):
             idx += 1
             if comm_style == "vertical" and idx % device_index != 0:
                 continue
-            
+
             gen_start = time.time()
-            for _ in range(2):
+            for _ in range(1):
                 prompt_ids, prompt_mask, completion_ids, completion_mask = generate_rollouts(model=model, tokenizer=tokenizer, question=q, sys_prompt=system_prompt, num_rollouts=group_size)
                 completions = tokenizer.batch_decode(completion_ids, skip_special_tokens=True)
                 returns, _, _ = reward_func(completions,a)
                 if torch.count_nonzero(returns).item() != 0:
                     break
-            
-        
+
+
             if len(replay_buffer) == 0:
                 print(f"{completions[0]}")
                 # print(f"{completions[1]}")
@@ -149,28 +150,22 @@ for k, prompt_batch in enumerate(prompt_loader):
                     exp = Experience(sequence_ids=sequence_ids,advantages=advantages,attention_mask=attention_mask[loc_rank],action_mask=completion_mask[loc_rank],start_ids=0, logits_to_keep=completion_ids[loc_rank].shape[1],gen_log_probs=seq_log_probs[loc_rank])
                     replay_buffer.append(exp.to("cpu"))
             print(len(replay_buffer))
-        
+
     print(f"generation time of step {k}: {generation_times:.4f}")
     print(f"communication time of step {k}: {comm_times:.4f}")
     torch.cuda.empty_cache()
-    
+
     episode_reward = torch.stack(rollout_returns).mean()
     print(f"group returns of step {k}: {episode_reward:.4f}")
     episode_reward = torch.stack(rollout_indv).mean()
     print(f"idividual returns of step {k}: {episode_reward:.4f}")
-    
-    
 
-    
+
+
     torch.cuda.empty_cache()
     update_start = time.time()
-    grpo_train_loop(model, optimizer, replay_buffer, grpo_config)
+    with torch.autocast(device_type="cuda", dtype=torch.bfloat16, enabled=True):
+        grpo_train_loop(model, optimizer, replay_buffer, grpo_config)
     print(f"update time of step {k}: {time.time() - update_start}")
     # post_train(model, optimizer, replay_buffer, ref_model, kl_weight,group_size)
-
-
-    
-    
-
-
-
+model.save_pretrained(out_dir)

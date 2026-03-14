@@ -3,7 +3,7 @@
     "group_size": 8,
     "batch_size": 16,
     "model_name": [
-        "Qwen/Qwen2.5-3B"
+        "Qwen/Qwen2.5-Coder-3B"
     ],
     "comm_style": "alone"
 }
