@@ -143,9 +143,10 @@ for k, prompt_batch in enumerate(prompt_loader):
                 replay_buffer.append(exp.to("cpu"))
             elif comm_style == "vertical":
                 for loc_rank in range(world_size):
+                    # print()
                     advantages = advantage_compute(returns[loc_rank])
                     rollout_returns.append(returns[loc_rank].to("cpu"))
-                    exp = Experience(sequence_ids=sequence_ids,advantages=advantages,attention_mask=attention_mask[loc_rank],action_mask=completion_mask[loc_rank],start_ids=0, logits_to_keep=completion_ids[loc_rank].shape[1],gen_log_probs=seq_log_probs[loc_rank])
+                    exp = Experience(sequence_ids=sequence_ids[loc_rank],advantages=advantages,attention_mask=attention_mask[loc_rank],action_mask=completion_mask[loc_rank],start_ids=0, logits_to_keep=completion_ids[loc_rank].shape[1],gen_log_probs=seq_log_probs[loc_rank])
                     replay_buffer.append(exp.to("cpu"))
             print(len(replay_buffer))
 
