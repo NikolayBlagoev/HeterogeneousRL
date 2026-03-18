@@ -1,5 +1,5 @@
 import torch
-from transformers import GenerationConfig
+from transformers import GenerationConfig, DynamicCache
 import torch.nn.functional as F
 from typing import List
 
@@ -47,7 +47,8 @@ def generate_rollouts(model, tokenizer,  question : str, sys_prompt: str = None,
             padding_side="left",
             return_attention_mask=True,
         ).to(model.device)
-
+    
+    # TODO: Add prefix caching
     # duplicate prompt num_rollouts times
     model_inputs["attention_mask"] = model_inputs["attention_mask"].repeat(
         num_rollouts, 1

@@ -6,7 +6,7 @@ import torch
 import torch.nn.functional as F
 from typing import Any, Iterator, Optional,List
 import torch.optim as optim
-
+from utils import compute_entropy
 from torch.nn.utils import clip_grad_norm_
 
 
@@ -39,7 +39,7 @@ class GRPOConfig():
     epsilon: float = 0.2
     epsilon_low: float = None
     epsilon_high: float = None
-    micro_batch_size: int = 3
+    micro_batch_size: int = 4
     steps_per_generation: int = 1
     clip_gradient: float = 1.0
     def __post_init__(self):
@@ -69,7 +69,7 @@ def advantage_compute(rewards, std_scale = True):
     return advantages
 
 # computes the log probs
-def sequences_log_probs(model, sequence_ids, attention_mask, logits_to_keep=None, temperature = 1.0, batch_size = None):
+def sequences_log_probs(model, sequence_ids, attention_mask, logits_to_keep=None, temperature = 1.0, batch_size = None, compute_entropy = False):
 
     if batch_size == None:
         batch_size = sequence_ids.shape[0]
@@ -77,6 +77,7 @@ def sequences_log_probs(model, sequence_ids, attention_mask, logits_to_keep=None
     if logits_to_keep != None:
         model_arg_logits = logits_to_keep + 1
     out = []
+    entropy_out = []
     for start in range(0,sequence_ids.shape[0], batch_size):
         _loc_sequence_ids = sequence_ids[start: start + batch_size]
         _loc_attention_mask = attention_mask[start: start + batch_size]
@@ -91,7 +92,12 @@ def sequences_log_probs(model, sequence_ids, attention_mask, logits_to_keep=None
         loss_mask = _loc_attention_mask[:, -logits_to_keep:].to(dtype=logits.dtype).contiguous()
         #TODO: Not everyone does this??
         out.append(token_log_probs * loss_mask + (1.0 - loss_mask) * torch.finfo(logits.dtype).min)
-    return torch.cat(out,dim=0)
+        if compute_entropy:
+            entropy_out.append(compute_entropy_from_logits(logits,256))
+    if compute_entropy:
+        return torch.cat(out,dim=0), torch.cat(entropy_out,dim=0)
+    else:
+        return torch.cat(out,dim=0), None
 
 def grpo_loss(log_probs, advantages, action_mask, grpo_config: GRPOConfig, gen_per_token_logps = None, ref_log_probs = None):
         """Compute the GRPO loss.
@@ -120,7 +126,7 @@ def grpo_loss(log_probs, advantages, action_mask, grpo_config: GRPOConfig, gen_p
         return loss.mean()
 
 
-def grpo_train_loop(model, optimizer, replay_buffer, grpo_config: GRPOConfig, ref_model = None):
+def grpo_train_loop(model, optimizer, replay_buffer, grpo_config: GRPOConfig, ref_model = None, compute_entropy = True, **loss_kwargs):
     model.train()
     device = model.device
     mb_size = grpo_config.micro_batch_size
@@ -130,6 +136,8 @@ def grpo_train_loop(model, optimizer, replay_buffer, grpo_config: GRPOConfig, re
     tmp_loss_hist = []
     kl_hist = []
     tmp_kl_hist = []
+    entropy_hist = []
+    tmp_entropy_hist = []
     _steps = 0
     optimizer.zero_grad()
 
@@ -143,9 +151,9 @@ def grpo_train_loop(model, optimizer, replay_buffer, grpo_config: GRPOConfig, re
             rng = (mb * mb_size, min(end,exp.sequence_ids.shape[0]) )
 
             # Compute log probs
-            log_probs = sequences_log_probs(
+            log_probs, entropy = sequences_log_probs(
                         model, sequence_ids=exp.sequence_ids[rng[0]:rng[1],:], attention_mask=exp.attention_mask[rng[0]:rng[1],:],
-                        logits_to_keep=exp.logits_to_keep
+                        logits_to_keep=exp.logits_to_keep, compute_entropy = compute_entropy
             )
             # Use ref log probs to compute kl-divergence:
 
@@ -157,6 +165,7 @@ def grpo_train_loop(model, optimizer, replay_buffer, grpo_config: GRPOConfig, re
             )
 
             tmp_kl_hist.append(per_token_kl.mean().item())
+            tmp_entropy_hist.append(entropy.mean().item())
             ref_log_probs = None
             loss = grpo_loss(log_probs=log_probs, advantages=exp.advantages[rng[0]:rng[1]], action_mask=exp.action_mask[rng[0]:rng[1]],
                             grpo_config=grpo_config, ref_log_probs=ref_log_probs, gen_per_token_logps=gen_log_probs)
@@ -177,6 +186,9 @@ def grpo_train_loop(model, optimizer, replay_buffer, grpo_config: GRPOConfig, re
                 torch.cuda.empty_cache()
                 loss_hist.append(sum(tmp_loss_hist)/len(tmp_loss_hist))
                 kl_hist.append(sum(tmp_kl_hist)/len(tmp_kl_hist))
+                if compute_entropy:
+                    entropy_hist.append(sum(tmp_entropy_hist)/len(tmp_entropy_hist))
+                tmp_entropy_hist.clear()
                 tmp_loss_hist.clear()
                 tmp_kl_hist.clear()
         del exp
@@ -186,7 +198,10 @@ def grpo_train_loop(model, optimizer, replay_buffer, grpo_config: GRPOConfig, re
             clip_grad_norm_(model.parameters(), max_norm=grpo_config.clip_gradient)
             loss_hist.append(sum(tmp_loss_hist)/len(tmp_loss_hist))
             kl_hist.append(sum(tmp_kl_hist)/len(tmp_kl_hist))
+            if compute_entropy:
+                entropy_hist.append(sum(tmp_entropy_hist)/len(tmp_entropy_hist))
+                
         optimizer.step()
         optimizer.zero_grad()
     torch.cuda.empty_cache()
-    return loss_hist, kl_hist
+    return loss_hist, kl_hist, entropy_hist

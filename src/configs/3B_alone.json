@@ -5,5 +5,6 @@
     "model_name": [
         "Qwen/Qwen2.5-3B"
     ],
-    "comm_style": "alone"
+    "comm_style": "alone",
+    "train_kwargs": {}
 }

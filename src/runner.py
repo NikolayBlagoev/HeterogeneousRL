@@ -58,14 +58,12 @@ tokenizer.pad_token = tokenizer.eos_token
 tokenizer.pad_token_id = tokenizer.eos_token_id
 pad_token_id = tokenizer.eos_token_id
 model = AutoModelForCausalLM.from_pretrained(model_name, device_map=device,attn_implementation="kernels-community/flash-attn3", dtype=torch.float32)
-# model.gradient_checkpointing_enable(
-#     gradient_checkpointing_kwargs={"use_reentrant": False}
-# )
+
 
 optimizer = optim.Adam(model.parameters(), lr=lr)
 
 train_dataset = scenario["dl_benign"]
-
+train_kwargs = scenario["train_kwargs"]
 val_ds = scenario["val_loader"]
 val_loader = DataLoader(
     val_ds,
@@ -89,7 +87,7 @@ replay_buffer = []
 global_counter = 0
 
 for k, prompt_batch in enumerate(prompt_loader):
-    if k == 21:
+    if k == 51:
         break
     rollout_returns = []
     rollout_indv = []
@@ -120,7 +118,7 @@ for k, prompt_batch in enumerate(prompt_loader):
             # print(prom)
             sequence_ids = torch.cat((prompt_ids,completion_ids),dim=1)
             attention_mask = torch.cat((prompt_mask, completion_mask), dim = 1)
-            seq_log_probs = sequences_log_probs(
+            seq_log_probs, _ = sequences_log_probs(
                         model, sequence_ids=sequence_ids, attention_mask=attention_mask,
                         logits_to_keep=completion_ids.shape[1]
             )
@@ -165,7 +163,10 @@ for k, prompt_batch in enumerate(prompt_loader):
     torch.cuda.empty_cache()
     update_start = time.time()
     with torch.autocast(device_type="cuda", dtype=torch.bfloat16, enabled=True):
-        grpo_train_loop(model, optimizer, replay_buffer, grpo_config)
+        loss_hist, kl_hist, entropy_hist = grpo_train_loop(model, optimizer, replay_buffer, grpo_config,**train_kwargs)
+        print(f"Loss at step {k}", loss_hist[0])
+        print(f"Loss at step {k}", kl_hist[0])
+        print(f"Loss at step {k}", entropy_hist[0])
     print(f"update time of step {k}: {time.time() - update_start}")
     # post_train(model, optimizer, replay_buffer, ref_model, kl_weight,group_size)
 model.save_pretrained(out_dir)
