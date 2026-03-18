@@ -100,7 +100,7 @@ for k, prompt_batch in enumerate(prompt_loader):
         idx = -1
         for q, s, a in zip(questions, solutions, answers):
             idx += 1
-            if comm_style == "vertical" and idx % device_index != 0:
+            if comm_style == "vertical" and idx % world_size != device_index:
                 continue
 
             gen_start = time.time()
