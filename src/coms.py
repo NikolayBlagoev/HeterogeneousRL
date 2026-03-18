@@ -28,7 +28,7 @@ def gather(out: torch.Tensor, rank, world_size, group = None):
     # for elm in _t2:
     #     print(elm.shape,elm.dtype,elm.device)
     # print(out.shape,out.dtype,out.device)
-    dist.all_gather(_t2,out.contigious(), group=group)
+    dist.all_gather(_t2,out.contiguous(), group=group)
     return _t2
 
 
