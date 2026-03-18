@@ -6,7 +6,7 @@ import torch
 import torch.nn.functional as F
 from typing import Any, Iterator, Optional,List
 import torch.optim as optim
-from utils import compute_entropy
+from utils import compute_entropy_from_logits
 from torch.nn.utils import clip_grad_norm_
 
 
