@@ -24,7 +24,7 @@ def gather(out: torch.Tensor, rank, world_size, group = None):
     tensor_shapes = len(out.shape)
     _t1 = [torch.zeros(tensor_shapes) for _ in range(world_size)]
     dist.all_gather(_t1,torch.tensor(list(out.shape)), group=group)
-    _t2 = [torch.zeros(_t1[id].tolist()) for id in range(world_size)]
+    _t2 = [torch.zeros(_t1[id].tolist(), dtype = out.dtype, device = out.device) for id in range(world_size)]
     dist.all_gather(_t2,out, group=group)
     return _t2
 
