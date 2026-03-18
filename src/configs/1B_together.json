@@ -1,0 +1,11 @@
+{
+    "task": "GSM8k",
+    "group_size": 8,
+    "batch_size": 16,
+    "model_name": [
+        "Qwen/Qwen2.5-1.5B",
+        "Qwen/Qwen2.5-Coder-1.5B"
+    ],
+    "comm_style": "alone",
+    "train_kwargs": {}
+}
