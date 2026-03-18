@@ -6,6 +6,6 @@
         "Qwen/Qwen2.5-1.5B",
         "Qwen/Qwen2.5-Coder-1.5B"
     ],
-    "comm_style": "alone",
+    "comm_style": "vertical",
     "train_kwargs": {}
 }
