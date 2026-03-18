@@ -25,10 +25,10 @@ def gather(out: torch.Tensor, rank, world_size, group = None):
     _t1 = [torch.zeros(tensor_shapes,dtype = torch.long, device = out.device) for _ in range(world_size)]
     dist.all_gather(_t1,torch.tensor(list(out.shape), device = out.device), group=group)
     _t2 = [torch.zeros(_t1[id].tolist(), dtype = out.dtype, device = out.device) for id in range(world_size)]
-    for elm in _t2:
-        print(elm.shape,elm.dtype,elm.device)
-    print(out.shape,out.dtype,out.device)
-    dist.all_gather(_t2.contigious(),out.contigious(), group=group)
+    # for elm in _t2:
+    #     print(elm.shape,elm.dtype,elm.device)
+    # print(out.shape,out.dtype,out.device)
+    dist.all_gather(_t2,out.contigious(), group=group)
     return _t2
 
 
