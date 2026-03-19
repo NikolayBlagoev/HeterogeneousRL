@@ -3,6 +3,7 @@ import itertools
 import numpy as np
 import torch
 import torch.nn.functional as F
+@torch.no_grad()
 def pass_at_k(n: int,c: List[int],k:int):
     def estimator(n:int,c:int,k:int):
         if n - c < k:
@@ -10,7 +11,7 @@ def pass_at_k(n: int,c: List[int],k:int):
         return 1.0 - np.prod(1.0 - k / np.arange(n - c + 1, n + 1))
     n = itertools.repeat(n,len(c))
     return np.array([estimator(n,c,k) for n,c in zip(n,c)])
-
+@torch.no_grad()
 def compute_entropy_from_logits(logits, chunk_size: int = 128) -> torch.Tensor:
     original_shape = logits.shape[:-1]  # all dims except num_classes
     num_classes = logits.shape[-1]
