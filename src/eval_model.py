@@ -94,6 +94,7 @@ def log_mix(s1,s2,alpha=0.5):
 def kl(s1,s2, alpha = 0.5):
     s1 = torch.log_softmax(s1, dim=-1)
     s2 = torch.log_softmax(s2, dim=-1)
+    mix = torch.log(s1.exp() * alpha + s2.exp()* (1-alpha))
     s1 = s1.exp()
     kl1 = (s1.exp() * (s1  - mix))
     kl2 = (s2.exp() * (s2 - mix))
@@ -153,7 +154,8 @@ for mb in range(4):
             past1 = out1.past_key_values
             past2 = out2.past_key_values
 
-            next_token = kl(s1,s2,0.5)
+            # next_token = kl(s1,s2,0.5)
+            next_token = one_only(s1,s2,0)
             next_token = next_token*unfinished_sequences + pad_token_id * (1 - unfinished_sequences)
             
             sequence_ids =  torch.cat([sequence_ids, next_token], dim=-1)
