@@ -44,7 +44,8 @@ def reward_answer(completions,oracle_answer):
 @torch.no_grad()
 def reward_answer_binary(completions,oracle_answer):
     returns = torch.zeros(len(completions), 1, dtype=torch.float)
-    
+    if not isinstance(oracle_answer,list):
+        oracle_answer = [oracle_answer]
     answer_reward = torch.zeros(len(completions), 1, dtype=torch.float)
     formatting_reward = torch.zeros(len(completions), 1, dtype=torch.float)
 
@@ -62,7 +63,7 @@ def reward_answer_binary(completions,oracle_answer):
         reward = 0
         if answer is not None:
             formatting_reward[i] = 0.5
-            if verify(parse(oracle_answer),parse(answer)):
+            if verify(parse(oracle_answer[i % len(oracle_answer)]),parse(answer)):
                 answer_reward[i] = 1
                 reward = 1
                 
