@@ -170,6 +170,8 @@ for mb in range(4):
     completions = tokenizer.batch_decode(completion_ids, skip_special_tokens=True)
     rewards = reward_answer_binary(completions,a)[0]
     print(completions[0])
+    print(a[0])
+    print(q[0])
     sum_rewards += rewards.sum().item()
     cannot_solve += [elm + mb*16 for elm in (rewards.flatten() == 0).nonzero()]
     # exit()
