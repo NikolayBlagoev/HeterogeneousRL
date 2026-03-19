@@ -158,14 +158,17 @@ def grpo_train_loop(model, optimizer, replay_buffer, grpo_config: GRPOConfig, re
             # Use ref log probs to compute kl-divergence:
 
             gen_log_probs = exp.gen_log_probs[rng[0]:rng[1],:]
-            per_token_kl = (
-                torch.exp(gen_log_probs - log_probs)
-                - (gen_log_probs - log_probs)
-                - 1
-            )
+            with torch.no_grad():
+                per_token_kl = (
+                    torch.exp(gen_log_probs - log_probs)
+                    - (gen_log_probs - log_probs)
+                    - 1
+                )
 
             tmp_kl_hist.append(per_token_kl.mean().item())
             tmp_entropy_hist.append(entropy.mean().item())
+            del entropy
+            del per_token_kl
             ref_log_probs = None
             loss = grpo_loss(log_probs=log_probs, advantages=exp.advantages[rng[0]:rng[1]], action_mask=exp.action_mask[rng[0]:rng[1]],
                             grpo_config=grpo_config, ref_log_probs=ref_log_probs, gen_per_token_logps=gen_log_probs)
