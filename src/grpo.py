@@ -52,6 +52,7 @@ class GRPOConfig():
 def per_token_log_probs(logits,targets,is_logits_log = False, mem_eff = True):
     # TODO: ADD WARNING ON BFLOAT
     if mem_eff and logits.dtype in [torch.float32, torch.float64]:
+        return None
         selected_logits = torch.gather(logits, dim=-1, index=targets.unsqueeze(-1)).squeeze(-1) # Shape (B, L)
         logsumexp_values = torch.stack([torch.logsumexp(lg, dim=-1) for lg in logits]) # Shape (B, L)
         token_log_probs = selected_logits - logsumexp_values

@@ -9,8 +9,8 @@ import torch.distributed as dist
 import torch
 from reward import reward_answer_binary
 from datasets import load_dataset
-base_model = "Qwen/Qwen2.5-3B"
-trained_model = argv[1]
+base_model = "Qwen/Qwen2.5-1.5B"
+
 system_prompt = """A conversation between User and Assistant. The user asks a question, and the Assistant solves it.
 The assistant needs to provide a detailed step by step solution of the problem. The reasoning process is enclosed within <think> </think> and the answer within <answer> </answer> tags with nothing outside said tags, i.e., <think> reasoning process here </think><answer> answer here </answer>\n
 """
@@ -18,7 +18,7 @@ tokenizer = AutoTokenizer.from_pretrained(base_model)
 tokenizer.pad_token = tokenizer.eos_token
 tokenizer.pad_token_id = tokenizer.eos_token_id
 pad_token_id = tokenizer.eos_token_id
-model = AutoModelForCausalLM.from_pretrained("3B_CODE", device_map="cuda:0",attn_implementation="kernels-community/flash-attn3", dtype=torch.bfloat16)
+model = AutoModelForCausalLM.from_pretrained("1B_code", device_map="cuda:0",attn_implementation="kernels-community/flash-attn3", dtype=torch.bfloat16)
 
 val_loader = load_dataset("openai/gsm8k","main", split="test",streaming = True, trust_remote_code=True)
 val_loader = val_loader.shuffle(buffer_size=5_000, seed=22)
@@ -35,7 +35,7 @@ def extract_gsm8k(prompt_batch):
 
 
 model1 = model
-model = AutoModelForCausalLM.from_pretrained("3B_MATH", device_map="cuda:0",attn_implementation="kernels-community/flash-attn3", dtype=torch.bfloat16)
+model = AutoModelForCausalLM.from_pretrained("1B_base", device_map="cuda:0",attn_implementation="kernels-community/flash-attn3", dtype=torch.bfloat16)
 
 
 
