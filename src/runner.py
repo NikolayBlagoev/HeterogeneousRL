@@ -160,15 +160,16 @@ for k, prompt_batch in enumerate(prompt_loader):
                 sequence_ids, max_l = unpad_tensor(sequence_ids,tokenizer.pad_token_id)
                 attention_mask = attention_mask[:,:max_l]
                 seq_log_probs = seq_log_probs[:,:max_l]
-
+                print(seq_log_probs)
                 returns = torch.cat(returns, dim = 0)
                 rollout_returns.append(returns.to("cpu"))
                 advantages = advantage_compute(returns)
-                
+                completion_ids = torch.cat(completion_ids, dim = 0)
                 completion_mask = torch.cat(completion_mask, dim = 0)
-                completion_mask, _ = unpad_tensor(completion_mask,0)
+                completion_ids, max_l = unpad_tensor(completion_ids,tokenizer.pad_token_id)
+                completion_mask = completion_mask[:,:max_l]
 
-                exp = Experience(sequence_ids=sequence_ids,advantages=advantages,attention_mask=attention_mask,action_mask=completion_mask,start_ids=0, logits_to_keep=completion_ids[0].shape[1],gen_log_probs=seq_log_probs)
+                exp = Experience(sequence_ids=sequence_ids,advantages=advantages,attention_mask=attention_mask,action_mask=completion_mask,start_ids=0, logits_to_keep=completion_ids.shape[1],gen_log_probs=seq_log_probs)
                 replay_buffer.append(exp.to("cpu"))
             print(len(replay_buffer))
 
