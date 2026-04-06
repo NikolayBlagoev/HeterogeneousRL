@@ -85,7 +85,7 @@ prompt_loader = DataLoader(
 data_interp = scenario["data_interp"]
 replay_buffer = []
 global_counter = 0
-
+print(tokenizer.pad_token_id)
 for k, prompt_batch in enumerate(prompt_loader):
     if k == 51:
         break
