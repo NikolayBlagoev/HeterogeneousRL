@@ -104,7 +104,7 @@ for k, prompt_batch in enumerate(prompt_loader):
                 continue
 
             gen_start = time.time()
-            for _ in range(2):
+            for _ in range(1):
                 prompt_ids, prompt_mask, completion_ids, completion_mask = generate_rollouts(model=model, tokenizer=tokenizer, question=q, sys_prompt=system_prompt, num_rollouts=group_size)
                 completions = tokenizer.batch_decode(completion_ids, skip_special_tokens=True)
                 returns, _, _ = reward_func(completions,a)
@@ -116,7 +116,7 @@ for k, prompt_batch in enumerate(prompt_loader):
                 print(f"{completions[0]}")
                 # print(f"{completions[1]}")
             # print(prom)
-            print(prompt_ids.shape[1]+completion_ids.shape[1])
+            
             if comm_style == "horizontal":
                 completion_ids = pad_tensor(completion_ids,tokenizer.pad_token_id,1024)
                 completion_mask = pad_tensor(completion_mask,0,1024)
@@ -162,17 +162,15 @@ for k, prompt_batch in enumerate(prompt_loader):
                 sequence_ids, max_l = unpad_tensor(sequence_ids,tokenizer.pad_token_id)
                 attention_mask = attention_mask[:,:max_l]
                 seq_log_probs = seq_log_probs[:,:max_l]
-                print(seq_log_probs.shape)
+                
                 returns = torch.cat(returns, dim = 0)
                 rollout_returns.append(returns.to("cpu"))
                 advantages = advantage_compute(returns)
-                print(returns)
-                print(advantages)
+
                 completion_ids = torch.cat(completion_ids, dim = 0)
                 completion_mask = torch.cat(completion_mask, dim = 0)
                 completion_ids, max_l = unpad_tensor(completion_ids,tokenizer.pad_token_id)
                 completion_mask = completion_mask[:,:max_l]
-                print(completion_ids.shape)
                 exp = Experience(sequence_ids=sequence_ids,advantages=advantages,attention_mask=attention_mask,action_mask=completion_mask,start_ids=0, logits_to_keep=completion_ids.shape[1],gen_log_probs=seq_log_probs)
                 replay_buffer.append(exp.to("cpu"))
             print(len(replay_buffer))
