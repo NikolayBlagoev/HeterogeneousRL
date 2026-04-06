@@ -165,6 +165,8 @@ for k, prompt_batch in enumerate(prompt_loader):
                 returns = torch.cat(returns, dim = 0)
                 rollout_returns.append(returns.to("cpu"))
                 advantages = advantage_compute(returns)
+                print(returns)
+                print(advantages)
                 completion_ids = torch.cat(completion_ids, dim = 0)
                 completion_mask = torch.cat(completion_mask, dim = 0)
                 completion_ids, max_l = unpad_tensor(completion_ids,tokenizer.pad_token_id)
