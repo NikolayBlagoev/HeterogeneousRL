@@ -193,8 +193,8 @@ for k, prompt_batch in enumerate(prompt_loader):
     with torch.autocast(device_type="cuda", dtype=torch.bfloat16, enabled=True):
         loss_hist, kl_hist, entropy_hist = grpo_train_loop(model, optimizer, replay_buffer, grpo_config,**train_kwargs)
         print(f"Loss at step {k}", loss_hist[0])
-        print(f"Loss at step {k}", kl_hist[0])
-        print(f"Loss at step {k}", entropy_hist[0])
+        print(f"KL at step {k}", kl_hist[0])
+        print(f"ENTROPY at step {k}", entropy_hist[0])
     print(f"update time of step {k}: {time.time() - update_start}")
     # post_train(model, optimizer, replay_buffer, ref_model, kl_weight,group_size)
 model.save_pretrained(out_dir)
