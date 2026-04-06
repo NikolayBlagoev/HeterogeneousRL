@@ -144,7 +144,7 @@ def grpo_train_loop(model, optimizer, replay_buffer, grpo_config: GRPOConfig, re
 
     for exp in replay_buffer:
         exp: Experience
-        if torch.count_nonzero(returns).item() == 0:
+        if torch.count_nonzero(exp.advantages).item() == 0:
             continue
         print("processing experience",exp.sequence_ids.shape)
         batches = exp.sequence_ids.shape[0] // mb_size
@@ -153,7 +153,7 @@ def grpo_train_loop(model, optimizer, replay_buffer, grpo_config: GRPOConfig, re
             _steps += 1
             end = (mb+1) * mb_size
             rng = (mb * mb_size, min(end,exp.sequence_ids.shape[0]) )
-
+            
             # Compute log probs
             log_probs, entropy = sequences_log_probs(
                         model, sequence_ids=exp.sequence_ids[rng[0]:rng[1],:], attention_mask=exp.attention_mask[rng[0]:rng[1],:],
