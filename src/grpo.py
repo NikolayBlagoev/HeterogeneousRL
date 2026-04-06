@@ -51,15 +51,9 @@ class GRPOConfig():
 
 def per_token_log_probs(logits,targets,is_logits_log = False, mem_eff = True):
     # TODO: ADD WARNING ON BFLOAT
-    if mem_eff and logits.dtype in [torch.float32, torch.float64]:
-        return None
-        selected_logits = torch.gather(logits, dim=-1, index=targets.unsqueeze(-1)).squeeze(-1) # Shape (B, L)
-        logsumexp_values = torch.stack([torch.logsumexp(lg, dim=-1) for lg in logits]) # Shape (B, L)
-        token_log_probs = selected_logits - logsumexp_values
-    else:
-        if not is_logits_log:
-            logits = F.log_softmax(logits, dim=-1)
-        token_log_probs = logits.gather(dim=-1, index=targets.unsqueeze(-1)).squeeze(-1)
+    if not is_logits_log:
+        logits = F.log_softmax(logits, dim=-1)
+    token_log_probs = logits.gather(dim=-1, index=targets.unsqueeze(-1)).squeeze(-1)
     return token_log_probs
 
 @torch.no_grad()
@@ -122,7 +116,7 @@ def grpo_loss(log_probs, advantages, action_mask, grpo_config: GRPOConfig, gen_p
             )
 
             per_token_loss += grpo_config.beta * per_token_kl
-        per_token_loss = torch.clamp(torch.exp(log_probs - gen_per_token_logps), 0, 2.0) * per_token_loss
+        per_token_loss = torch.clamp(torch.exp(log_probs.detach() - gen_per_token_logps), 0, 2.0) * per_token_loss
         loss = (per_token_loss * action_mask).sum(dim=-1) / 768
         return loss.mean()
 
@@ -204,10 +198,10 @@ def grpo_train_loop(model, optimizer, replay_buffer, grpo_config: GRPOConfig, re
         print("update")
         if grpo_config.clip_gradient != None:
             clip_grad_norm_(model.parameters(), max_norm=grpo_config.clip_gradient)
-            loss_hist.append(sum(tmp_loss_hist)/len(tmp_loss_hist))
-            kl_hist.append(sum(tmp_kl_hist)/len(tmp_kl_hist))
-            if compute_entropy:
-                entropy_hist.append(sum(tmp_entropy_hist)/len(tmp_entropy_hist))
+        loss_hist.append(sum(tmp_loss_hist)/len(tmp_loss_hist))
+        kl_hist.append(sum(tmp_kl_hist)/len(tmp_kl_hist))
+        if compute_entropy:
+            entropy_hist.append(sum(tmp_entropy_hist)/len(tmp_entropy_hist))
                 
         optimizer.step()
         optimizer.zero_grad()
