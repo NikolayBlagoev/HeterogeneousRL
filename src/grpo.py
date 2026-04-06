@@ -144,7 +144,7 @@ def grpo_train_loop(model, optimizer, replay_buffer, grpo_config: GRPOConfig, re
 
     for exp in replay_buffer:
         exp: Experience
-        if exp.advantages.sum().item() == 0:
+        if torch.count_nonzero(returns).item() == 0:
             continue
         print("processing experience",exp.sequence_ids.shape)
         batches = exp.sequence_ids.shape[0] // mb_size

@@ -104,7 +104,7 @@ for k, prompt_batch in enumerate(prompt_loader):
                 continue
 
             gen_start = time.time()
-            for _ in range(1):
+            for _ in range(2):
                 prompt_ids, prompt_mask, completion_ids, completion_mask = generate_rollouts(model=model, tokenizer=tokenizer, question=q, sys_prompt=system_prompt, num_rollouts=group_size)
                 completions = tokenizer.batch_decode(completion_ids, skip_special_tokens=True)
                 returns, _, _ = reward_func(completions,a)
@@ -132,7 +132,7 @@ for k, prompt_batch in enumerate(prompt_loader):
             rollout_indv.append(returns)
             returns = returns.to(device)
             comm_start = time.time()
-            print(returns)
+            
             if comm_style != "alone" and world_size > 1:
                 seq_log_probs = gather(seq_log_probs,device_index,world_size)
                 attention_mask = gather(attention_mask,device_index,world_size)
@@ -140,7 +140,7 @@ for k, prompt_batch in enumerate(prompt_loader):
                 returns = gather(returns,device_index,world_size)
                 completion_mask = gather(completion_mask,device_index,world_size)
                 sequence_ids = gather(sequence_ids,device_index,world_size)
-            print(returns)
+            
             comm_end = time.time()
             comm_times += comm_end - comm_start
             if comm_style == "alone" or world_size == 1:
