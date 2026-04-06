@@ -118,8 +118,8 @@ for k, prompt_batch in enumerate(prompt_loader):
             # print(prom)
             print(prompt_ids.shape[1]+completion_ids.shape[1])
             if comm_style == "horizontal":
-                completion_ids = pad_tensor(completion_ids,tokenizer.pad_token_id,768)
-                completion_mask = pad_tensor(completion_mask,0,768)
+                completion_ids = pad_tensor(completion_ids,tokenizer.pad_token_id,1024)
+                completion_mask = pad_tensor(completion_mask,0,1024)
             sequence_ids = torch.cat((prompt_ids,completion_ids),dim=1)
             attention_mask = torch.cat((prompt_mask, completion_mask), dim = 1)
             
