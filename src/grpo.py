@@ -146,6 +146,7 @@ def grpo_train_loop(model, optimizer, replay_buffer, grpo_config: GRPOConfig, re
         exp: Experience
         if exp.advantages.sum().item() == 0:
             continue
+        print("processing experience",exp.sequence_ids.shape)
         batches = exp.sequence_ids.shape[0] // mb_size
         exp = exp.to(device)
         for mb in range(batches):
@@ -177,6 +178,7 @@ def grpo_train_loop(model, optimizer, replay_buffer, grpo_config: GRPOConfig, re
                             grpo_config=grpo_config, ref_log_probs=ref_log_probs, gen_per_token_logps=gen_log_probs)
 
             if not loss.isfinite():
+                print("INFINITE LOSS")
                 continue
 
             print(f"loss={loss: .4f}")

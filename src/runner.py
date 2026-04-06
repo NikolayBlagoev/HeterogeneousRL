@@ -160,7 +160,7 @@ for k, prompt_batch in enumerate(prompt_loader):
                 sequence_ids, max_l = unpad_tensor(sequence_ids,tokenizer.pad_token_id)
                 attention_mask = attention_mask[:,:max_l]
                 seq_log_probs = seq_log_probs[:,:max_l]
-                print(seq_log_probs)
+                print(seq_log_probs.shape)
                 returns = torch.cat(returns, dim = 0)
                 rollout_returns.append(returns.to("cpu"))
                 advantages = advantage_compute(returns)
