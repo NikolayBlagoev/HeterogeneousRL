@@ -30,10 +30,6 @@ The assistant needs to provide a detailed step by step solution of the problem. 
 
 scenario = process_config(scenario,ds_seed,device_index=device_index)
 
-
-
-
-mb_size = 4
 lr = 5e-6
 kl_weight = 0
 comm_style = scenario["comm_style"]
@@ -57,7 +53,7 @@ tokenizer = AutoTokenizer.from_pretrained(model_name)
 tokenizer.pad_token = tokenizer.eos_token
 tokenizer.pad_token_id = tokenizer.eos_token_id
 pad_token_id = tokenizer.eos_token_id
-model = AutoModelForCausalLM.from_pretrained(model_name, device_map=device,attn_implementation="kernels-community/flash-attn3", dtype=torch.float32)
+model = AutoModelForCausalLM.from_pretrained(model_name, device_map=device,attn_implementation="kernels-community/flash-attn3", dtype=torch.bfloat16)
 
 
 optimizer = optim.Adam(model.parameters(), lr=lr)
