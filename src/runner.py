@@ -116,6 +116,7 @@ for k, prompt_batch in enumerate(prompt_loader):
                 print(f"{completions[0]}")
                 # print(f"{completions[1]}")
             # print(prom)
+            print(prompt_ids.shape[1]+completion_ids.shape[1])
             if comm_style == "horizontal":
                 completion_ids = pad_tensor(completion_ids,tokenizer.pad_token_id,768)
                 completion_mask = pad_tensor(completion_mask,0,768)
