@@ -163,7 +163,7 @@ for k, prompt_batch in enumerate(prompt_loader):
 
                 returns = torch.cat(returns, dim = 0)
                 rollout_returns.append(returns.to("cpu"))
-                advantages = advantage_compute(returns, dim = 0)
+                advantages = advantage_compute(returns)
                 
                 completion_mask = torch.cat(completion_mask, dim = 0)
                 completion_mask, _ = unpad_tensor(completion_mask,0)
