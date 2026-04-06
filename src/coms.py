@@ -4,7 +4,7 @@ import torch
 import os
 
 def pad_tensor(tensor: torch.Tensor, pad_token, pad_to = 2048):
-    return F.pad(seq_log_probs, (0,pad_to - tensor.shape[1]), "constant", pad_token)
+    return F.pad(tensor, (0,pad_to - tensor.shape[1]), "constant", pad_token)
 
 def unpad_tensor(tensor: torch.Tensor, pad_token: int):
     max_el = 0
