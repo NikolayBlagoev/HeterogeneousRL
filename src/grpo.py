@@ -103,12 +103,12 @@ def sequences_log_probs(model, sequence_ids, attention_mask, logits_to_keep=None
 def grpo_loss(log_probs, advantages, action_mask, grpo_config: GRPOConfig, gen_per_token_logps = None, ref_log_probs = None):
         """Compute the GRPO loss.
         """
-        do_ref = True
-        if gen_per_token_logps == None:
-            gen_per_token_logps = log_probs.detach()
-            do_ref = False
+        do_ref = False
+        # if gen_per_token_logps == None:
+        #     gen_per_token_logps = log_probs.detach()
+        #     do_ref = False
 
-        coef_1 = torch.exp(log_probs - gen_per_token_logps)
+        coef_1 = torch.exp(log_probs - log_probs.detach())
         if do_ref:
             coef_2 = torch.clamp(coef_1, 1 - grpo_config.epsilon_low, 1 + grpo_config.epsilon_high)
             per_token_loss = torch.min(-coef_1 * advantages, -coef_2 * advantages)
@@ -122,7 +122,7 @@ def grpo_loss(log_probs, advantages, action_mask, grpo_config: GRPOConfig, gen_p
             )
 
             per_token_loss += grpo_config.beta * per_token_kl
-
+        per_token_loss = torch.clamp(torch.exp(log_probs - gen_per_token_logps), 0, 2.0) * per_token_loss
         loss = (per_token_loss * action_mask).sum(dim=-1) / 768
         return loss.mean()
 
