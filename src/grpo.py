@@ -144,6 +144,8 @@ def grpo_train_loop(model, optimizer, replay_buffer, grpo_config: GRPOConfig, re
 
     for exp in replay_buffer:
         exp: Experience
+        if exp.advantages.sum().item() == 0:
+            continue
         batches = exp.sequence_ids.shape[0] // mb_size
         exp = exp.to(device)
         for mb in range(batches):

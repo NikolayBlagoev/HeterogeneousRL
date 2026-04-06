@@ -95,7 +95,7 @@ def kl(s1,s2, alpha = 0.5):
     s1 = torch.log_softmax(s1, dim=-1)
     s2 = torch.log_softmax(s2, dim=-1)
     mix = torch.log(s1.exp() * alpha + s2.exp()* (1-alpha))
-    s1 = s1.exp()
+    
     kl1 = (s1.exp() * (s1  - mix))
     kl2 = (s2.exp() * (s2 - mix))
     kl1 = kl1.sum(-1)

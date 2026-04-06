@@ -148,6 +148,16 @@ for k, prompt_batch in enumerate(prompt_loader):
                     rollout_returns.append(returns[loc_rank].to("cpu"))
                     exp = Experience(sequence_ids=sequence_ids[loc_rank],advantages=advantages,attention_mask=attention_mask[loc_rank],action_mask=completion_mask[loc_rank],start_ids=0, logits_to_keep=completion_ids[loc_rank].shape[1],gen_log_probs=seq_log_probs[loc_rank])
                     replay_buffer.append(exp.to("cpu"))
+            elif comm_style == "horizontal":   
+                sequence_ids = torch.cat(sequence_ids)
+                returns = torch.cat(returns)
+                rollout_returns.append(returns.to("cpu"))
+                advantages = advantage_compute(returns)
+                attention_mask = torch.cat(attention_mask)
+                completion_mask = torch.cat(completion_mask)
+                seq_log_probs = torch.cat(seq_log_probs)
+                exp = Experience(sequence_ids=sequence_ids,advantages=advantages,attention_mask=attention_mask,action_mask=completion_mask,start_ids=0, logits_to_keep=completion_ids.shape[1],gen_log_probs=seq_log_probs)
+                replay_buffer.append(exp.to("cpu"))
             print(len(replay_buffer))
 
     print(f"generation time of step {k}: {generation_times:.4f}")
