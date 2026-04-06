@@ -7,7 +7,7 @@ import torch.distributed as dist
 import torch
 import time
 import math
-from coms import setup_comms, gather
+from coms import setup_comms, gather, pad_tensor, unpad_tensor
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from generate_rollouts import generate_rollouts
@@ -116,8 +116,12 @@ for k, prompt_batch in enumerate(prompt_loader):
                 print(f"{completions[0]}")
                 # print(f"{completions[1]}")
             # print(prom)
+            if comm_style == "horizontal":
+                completion_ids = pad_tensor(completion_ids,tokenizer.pad_token_id,768)
+                completion_mask = pad_tensor(completion_mask,0,768)
             sequence_ids = torch.cat((prompt_ids,completion_ids),dim=1)
             attention_mask = torch.cat((prompt_mask, completion_mask), dim = 1)
+            
             seq_log_probs, _ = sequences_log_probs(
                         model, sequence_ids=sequence_ids, attention_mask=attention_mask,
                         logits_to_keep=completion_ids.shape[1]
@@ -127,6 +131,7 @@ for k, prompt_batch in enumerate(prompt_loader):
             rollout_indv.append(returns)
             returns = returns.to(device)
             comm_start = time.time()
+            
             if comm_style != "alone" and world_size > 1:
                 seq_log_probs = gather(seq_log_probs,device_index,world_size)
                 attention_mask = gather(attention_mask,device_index,world_size)
@@ -150,12 +155,19 @@ for k, prompt_batch in enumerate(prompt_loader):
                     replay_buffer.append(exp.to("cpu"))
             elif comm_style == "horizontal":   
                 sequence_ids = torch.cat(sequence_ids, dim = 0)
+                attention_mask = torch.cat(attention_mask, dim = 0)
+                seq_log_probs = torch.cat(seq_log_probs, dim = 0)
+                sequence_ids, max_l = unpad_tensor(sequence_ids,tokenizer.pad_token_id)
+                attention_mask = attention_mask[:,:max_l]
+                seq_log_probs = seq_log_probs[:,:max_l]
+
                 returns = torch.cat(returns, dim = 0)
                 rollout_returns.append(returns.to("cpu"))
                 advantages = advantage_compute(returns, dim = 0)
-                attention_mask = torch.cat(attention_mask, dim = 0)
+                
                 completion_mask = torch.cat(completion_mask, dim = 0)
-                seq_log_probs = torch.cat(seq_log_probs, dim = 0)
+                completion_mask, _ = unpad_tensor(completion_mask,0)
+
                 exp = Experience(sequence_ids=sequence_ids,advantages=advantages,attention_mask=attention_mask,action_mask=completion_mask,start_ids=0, logits_to_keep=completion_ids[0].shape[1],gen_log_probs=seq_log_probs)
                 replay_buffer.append(exp.to("cpu"))
             print(len(replay_buffer))
