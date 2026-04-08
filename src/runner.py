@@ -83,7 +83,7 @@ replay_buffer = []
 global_counter = 0
 print(tokenizer.pad_token_id)
 for k, prompt_batch in enumerate(prompt_loader):
-    if k == 51:
+    if k == 101:
         break
     rollout_returns = []
     rollout_indv = []
