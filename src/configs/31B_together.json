@@ -6,6 +6,6 @@
         "Qwen/Qwen2.5-1.5B",
         "Qwen/Qwen2.5-3B"
     ],
-    "comm_style": "vertical",
+    "comm_style": "horizontal",
     "train_kwargs": {}
 }
