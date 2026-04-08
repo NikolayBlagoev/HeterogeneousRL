@@ -6,6 +6,7 @@ from sys import argv
 import torch.distributed as dist
 import torch
 import time
+from transformers import GenerationConfig
 import math
 from coms import setup_comms, gather, pad_tensor, unpad_tensor
 import torch.optim as optim
@@ -181,7 +182,47 @@ for k, prompt_batch in enumerate(prompt_loader):
     print(f"group returns of step {k}: {episode_reward:.4f}")
     episode_reward = torch.stack(rollout_indv).mean()
     print(f"idividual returns of step {k}: {episode_reward:.4f}")
-
+    if k % 5 == 0:
+        val_dl = iter(val_loader)
+        val_batch = next(val_dl)
+        q,s,a = data_interp(val_batch)
+        chat_prompts = []
+        for question in q:
+            chat_messages = [
+                {
+                    "role": "system",
+                    "content": system_prompt,
+                },
+                {
+                    "role": "user",
+                    "content": question,
+                }
+            ]
+            
+            chat_prompts.append(tokenizer.apply_chat_template(
+                chat_messages, tokenize=False, add_generation_prompt=True
+            ))
+        model_inputs = tokenizer(
+            chat_prompts,
+            return_tensors="pt",
+            padding=True,
+            padding_side="left",
+            return_attention_mask=True,
+            add_special_tokens=False
+        ).to(model.device)
+        generation_config = GenerationConfig(
+            max_new_tokens=768,
+            do_sample=False,
+            pad_token_id=tokenizer.pad_token_id,
+            eos_token_id=tokenizer.eos_token_id,
+        )
+        start_seq = model_inputs["input_ids"].shape[1]
+        with (torch.no_grad(), torch.autocast(device_type="cuda", dtype=torch.bfloat16, enabled=True)):
+            completion_ids = model.generate(**model_inputs,generation_config = generation_config)
+            completion_ids = completion_ids[:, start_seq :]
+            completions = tokenizer.batch_decode(completion_ids, skip_special_tokens=True)
+            rewards = reward_func(completions,a)[0].mean().item()
+            print(f"Validation of step {k}: {rewards:.4f}")
 
 
     torch.cuda.empty_cache()
