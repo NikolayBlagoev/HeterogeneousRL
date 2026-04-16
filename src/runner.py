@@ -47,6 +47,7 @@ if comm_style == "horizontal":
 grpo_config = GRPOConfig(num_generations=group_size)
 
 model_name = scenario["model_name"]
+model.generation_config.max_new_tokens = None
 reward_func = scenario["reward_func"]
 
 device = f"cuda:{device_index}"
@@ -64,7 +65,7 @@ train_kwargs = scenario["train_kwargs"]
 val_ds = scenario["val_loader"]
 val_loader = DataLoader(
     val_ds,
-    batch_size=10,
+    batch_size=4,
     shuffle=False,
     drop_last=True,
     pin_memory=False,
@@ -115,8 +116,8 @@ for k, prompt_batch in enumerate(prompt_loader):
             # print(prom)
             
             if comm_style == "horizontal":
-                completion_ids = pad_tensor(completion_ids,tokenizer.pad_token_id,1024)
-                completion_mask = pad_tensor(completion_mask,0,1024)
+                completion_ids = pad_tensor(completion_ids,tokenizer.pad_token_id,768)
+                completion_mask = pad_tensor(completion_mask,0,768)
             sequence_ids = torch.cat((prompt_ids,completion_ids),dim=1)
             attention_mask = torch.cat((prompt_mask, completion_mask), dim = 1)
             
@@ -185,7 +186,7 @@ for k, prompt_batch in enumerate(prompt_loader):
     if k % 5 == 0:
         val_dl = iter(val_loader)
         rewards = 0
-        for _ in range(4):
+        for _ in range(10):
             val_batch = next(val_dl)
             q,s,a = data_interp(val_batch)
             chat_prompts = []
@@ -214,16 +215,22 @@ for k, prompt_batch in enumerate(prompt_loader):
             ).to(model.device)
             generation_config = GenerationConfig(
                 max_new_tokens=768,
-                do_sample=False,
+                do_sample=True,
                 pad_token_id=tokenizer.pad_token_id,
                 eos_token_id=tokenizer.eos_token_id,
+                temperature = 1.0,
+                top_p = 1.0,
+                top_k = 50,
             )
+
             start_seq = model_inputs["input_ids"].shape[1]
+            model_inputs["input_ids"] = model_inputs["input_ids"].repeat(1,4,1).squeeze(0)
+            model_inputs["attention_mask"] = model_inputs["attention_mask"].repeat(1,4,1).squeeze(0)
             with (torch.no_grad(), torch.autocast(device_type="cuda", dtype=torch.bfloat16, enabled=True)):
                 completion_ids = model.generate(**model_inputs,generation_config = generation_config)
                 completion_ids = completion_ids[:, start_seq :]
                 completions = tokenizer.batch_decode(completion_ids, skip_special_tokens=True)
-                rewards += reward_func(completions,a)[0].mean().item()
+                rewards += reward_func(completions,a)[0].mean().item() / 10
         print(f"Validation of step {k}: {rewards:.4f}")
 
 

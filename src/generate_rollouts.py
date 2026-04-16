@@ -1,5 +1,5 @@
 import torch
-from transformers import GenerationConfig, DynamicCache
+from transformers import GenerationConfig
 import torch.nn.functional as F
 from typing import List
 
@@ -10,7 +10,7 @@ def generate_rollouts(model, tokenizer,  question : str, sys_prompt: str = None,
     chat_messages = []
     if generation_config == None:
         generation_config = GenerationConfig(
-            max_new_tokens=768,
+            max_length=760,
             do_sample=True,
             pad_token_id=tokenizer.pad_token_id,
             eos_token_id=tokenizer.eos_token_id,
