@@ -47,7 +47,7 @@ if comm_style == "horizontal":
 grpo_config = GRPOConfig(num_generations=group_size)
 
 model_name = scenario["model_name"]
-model.generation_config.max_new_tokens = None
+
 reward_func = scenario["reward_func"]
 
 device = f"cuda:{device_index}"
@@ -57,7 +57,7 @@ tokenizer.pad_token_id = tokenizer.eos_token_id
 pad_token_id = tokenizer.eos_token_id
 model = AutoModelForCausalLM.from_pretrained(model_name, device_map=device,attn_implementation="kernels-community/flash-attn3", dtype=torch.bfloat16)
 
-
+model.generation_config.max_new_tokens = None
 optimizer = optim.Adam(model.parameters(), lr=lr)
 
 train_dataset = scenario["dl_benign"]
