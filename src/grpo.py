@@ -39,7 +39,7 @@ class GRPOConfig():
     epsilon: float = 0.2
     epsilon_low: float = None
     epsilon_high: float = None
-    micro_batch_size: int = 4
+    micro_batch_size: int = 2
     steps_per_generation: int = 1
     clip_gradient: float = 1.0
     def __post_init__(self):
@@ -66,7 +66,8 @@ def advantage_compute(rewards, std_scale = True):
 # computes the log probs
 def sequences_log_probs(model, sequence_ids, attention_mask, logits_to_keep=None, temperature = 1.0, batch_size = None, compute_entropy = False):
 
-    batch_size = sequence_ids.shape[0]
+    if batch_size == None:
+        batch_size = sequence_ids.shape[0]
     model_arg_logits = None
     if logits_to_keep != None:
         model_arg_logits = logits_to_keep + 1
