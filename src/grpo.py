@@ -94,10 +94,10 @@ def sequences_log_probs(model, sequence_ids, attention_mask, logits_to_keep=None
     else:
         return torch.cat(out,dim=0), None
 
-def grpo_loss(log_probs, advantages, action_mask, grpo_config: GRPOConfig, gen_per_token_logps = None, ref_log_probs = None, vis = True):
+def grpo_loss(log_probs, advantages, action_mask, grpo_config: GRPOConfig, gen_per_token_logps = None, ref_log_probs = None, method = True):
         """Compute the GRPO loss.
         """
-        if vis:
+        if method:
             do_ref = True
             if gen_per_token_logps == None:
                 gen_per_token_logps = log_probs.detach()
