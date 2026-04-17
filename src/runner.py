@@ -156,7 +156,7 @@ for k, prompt_batch in enumerate(prompt_loader):
                 seq_log_probs = torch.cat(seq_log_probs, dim = 0)
 
                 completion_mask = attention_mask[:,start_seq:]
-                seq_log_probs = seq_log_probs[:,:max_l]
+                seq_log_probs = seq_log_probs[:,:max_l - start_seq]
                 
                 exp = Experience(sequence_ids=sequence_ids,advantages=advantages,attention_mask=attention_mask,action_mask=completion_mask,start_ids=0, logits_to_keep=start_seq,gen_log_probs=seq_log_probs)
                 replay_buffer.append(exp.to("cpu"))
