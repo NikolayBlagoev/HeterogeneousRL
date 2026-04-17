@@ -133,7 +133,7 @@ def grpo_loss(log_probs, advantages, action_mask, grpo_config: GRPOConfig, gen_p
                 )
 
                 per_token_loss += grpo_config.beta * per_token_kl
-            per_token_loss = torch.min(torch.ones_like(log_probs)*2, torch.exp(log_probs - gen_per_token_logps)) * per_token_loss
+            per_token_loss = torch.min(torch.ones_like(log_probs)*2, torch.exp(log_probs.detach() - gen_per_token_logps)) * per_token_loss
         loss = (per_token_loss * action_mask).sum(dim=-1) / 768
         return loss.mean()
 
