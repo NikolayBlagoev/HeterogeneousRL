@@ -21,8 +21,10 @@ seed = 42
 ds_seed = 42
 
 device_index = int(argv[1])
-scenario = argv[2]
-out_dir = argv[3]
+method = argv[2] == "vis"
+scenario = argv[3]
+out_dir = argv[4]
+
 
 
 system_prompt = """A conversation between User and Assistant. The user asks a question, and the Assistant solves it.
@@ -237,7 +239,7 @@ for k, prompt_batch in enumerate(prompt_loader):
     torch.cuda.empty_cache()
     update_start = time.time()
     with torch.autocast(device_type="cuda", dtype=torch.bfloat16, enabled=True):
-        loss_hist, kl_hist, entropy_hist = grpo_train_loop(model, optimizer, replay_buffer, grpo_config,**train_kwargs)
+        loss_hist, kl_hist, entropy_hist = grpo_train_loop(model, optimizer, replay_buffer, grpo_config,method = method,**train_kwargs)
         print(f"Loss at step {k}", loss_hist[0])
         print(f"KL at step {k}", kl_hist[0])
         print(f"ENTROPY at step {k}", entropy_hist[0])

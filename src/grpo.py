@@ -94,34 +94,51 @@ def sequences_log_probs(model, sequence_ids, attention_mask, logits_to_keep=None
     else:
         return torch.cat(out,dim=0), None
 
-def grpo_loss(log_probs, advantages, action_mask, grpo_config: GRPOConfig, gen_per_token_logps = None, ref_log_probs = None):
+def grpo_loss(log_probs, advantages, action_mask, grpo_config: GRPOConfig, gen_per_token_logps = None, ref_log_probs = None, vis = True):
         """Compute the GRPO loss.
         """
-        do_ref = False
-        # if gen_per_token_logps == None:
-        #     gen_per_token_logps = log_probs.detach()
-        #     do_ref = False
+        if vis:
+            do_ref = True
+            if gen_per_token_logps == None:
+                gen_per_token_logps = log_probs.detach()
+                do_ref = False
 
-        coef_1 = torch.exp(log_probs - log_probs.detach())
-        if do_ref:
-            coef_2 = torch.clamp(coef_1, 1 - grpo_config.epsilon_low, 1 + grpo_config.epsilon_high)
-            per_token_loss = torch.min(-coef_1 * advantages, -coef_2 * advantages)
+            coef_1 = torch.exp(log_probs - gen_per_token_logps)
+            if do_ref:
+                coef_2 = torch.clamp(coef_1, 1 - grpo_config.epsilon_low, 1 + grpo_config.epsilon_high)
+                per_token_loss = torch.min(-coef_1 * advantages, -coef_2 * advantages)
+            else:
+                per_token_loss = -coef_1 * advantages
+            if ref_log_probs != None:
+                per_token_kl = (
+                    torch.exp(ref_log_probs - log_probs)
+                    - (ref_log_probs - log_probs)
+                    - 1
+                )
+
+                per_token_loss += grpo_config.beta * per_token_kl
         else:
-            per_token_loss = -coef_1 * advantages
-        if ref_log_probs != None:
-            per_token_kl = (
-                torch.exp(ref_log_probs - log_probs)
-                - (ref_log_probs - log_probs)
-                - 1
-            )
+            do_ref = False
+            coef_1 = torch.exp(log_probs - log_probs.detach())
+            if do_ref:
+                coef_2 = torch.clamp(coef_1, 1 - grpo_config.epsilon_low, 1 + grpo_config.epsilon_high)
+                per_token_loss = torch.min(-coef_1 * advantages, -coef_2 * advantages)
+            else:
+                per_token_loss = -coef_1 * advantages
+            if ref_log_probs != None:
+                per_token_kl = (
+                    torch.exp(ref_log_probs - log_probs)
+                    - (ref_log_probs - log_probs)
+                    - 1
+                )
 
-            per_token_loss += grpo_config.beta * per_token_kl
-        per_token_loss = torch.clamp(torch.exp(log_probs.detach() - gen_per_token_logps), 0, 2.0) * per_token_loss
+                per_token_loss += grpo_config.beta * per_token_kl
+            per_token_loss = torch.min(torch.ones_like(log_probs)*2, log_probs - gen_per_token_logps) * per_token_loss
         loss = (per_token_loss * action_mask).sum(dim=-1) / 768
         return loss.mean()
 
 
-def grpo_train_loop(model, optimizer, replay_buffer, grpo_config: GRPOConfig, ref_model = None, compute_entropy = True, **loss_kwargs):
+def grpo_train_loop(model, optimizer, replay_buffer, grpo_config: GRPOConfig, ref_model = None, compute_entropy = True, method = True, **loss_kwargs):
     model.train()
     device = model.device
     mb_size = grpo_config.micro_batch_size
@@ -169,7 +186,7 @@ def grpo_train_loop(model, optimizer, replay_buffer, grpo_config: GRPOConfig, re
             del per_token_kl
             ref_log_probs = None
             loss = grpo_loss(log_probs=log_probs, advantages=exp.advantages[rng[0]:rng[1]], action_mask=exp.action_mask[rng[0]:rng[1]],
-                            grpo_config=grpo_config, ref_log_probs=ref_log_probs, gen_per_token_logps=gen_log_probs)
+                            grpo_config=grpo_config, ref_log_probs=ref_log_probs, gen_per_token_logps=gen_log_probs, method = method)
 
             if not loss.isfinite():
                 print("INFINITE LOSS")
