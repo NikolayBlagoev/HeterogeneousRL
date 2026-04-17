@@ -50,7 +50,7 @@ class GRPOConfig():
         return
 
 def per_token_log_probs(logits,targets,is_logits_log = False, mem_eff = True):
-    # TODO: ADD WARNING ON BFLOAT
+    
     if not is_logits_log:
         logits = F.log_softmax(logits, dim=-1)
     token_log_probs = logits.gather(dim=-1, index=targets.unsqueeze(-1)).squeeze(-1)
@@ -85,8 +85,8 @@ def sequences_log_probs(model, sequence_ids, attention_mask, logits_to_keep=None
         token_log_probs = per_token_log_probs(logits,targets)
         # take the attention mask from completion start onwards
         loss_mask = _loc_attention_mask[:, -logits_to_keep:].to(dtype=logits.dtype).contiguous()
-        #TODO: Not everyone does this??
-        out.append(token_log_probs * loss_mask + (1.0 - loss_mask) * torch.finfo(logits.dtype).min)
+
+        out.append(token_log_probs)
         if compute_entropy:
             entropy_out.append(compute_entropy_from_logits(logits,256))
     if compute_entropy:
