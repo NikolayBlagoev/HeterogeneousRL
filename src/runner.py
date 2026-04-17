@@ -138,8 +138,14 @@ for k, prompt_batch in enumerate(prompt_loader):
             
 
             if comm_style == "alone" or world_size == 1:
-                advantages = advantage_compute(returns)
+                sequence_ids, max_l = unpad_tensor(sequence_ids,tokenizer.pad_token_id)
+                attention_mask = attention_mask[:,:max_l]
+                
                 rollout_returns.append(returns.to("cpu"))
+                advantages = advantage_compute(returns)
+
+                completion_mask = attention_mask[:,start_seq:]
+                seq_log_probs = seq_log_probs[:,:max_l - start_seq]
                 exp = Experience(sequence_ids=sequence_ids,advantages=advantages,attention_mask=attention_mask,action_mask=completion_mask,start_ids=0, logits_to_keep=start_seq,gen_log_probs=seq_log_probs)
                 replay_buffer.append(exp.to("cpu"))
             elif comm_style == "horizontal":   
