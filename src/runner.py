@@ -96,7 +96,7 @@ for k, prompt_batch in enumerate(prompt_loader):
     generation_times = 0
     comm_times = 0
 
-    with (torch.no_grad(), torch.autocast(device_type="cuda", dtype=torch.bfloat16, enabled=True)):
+    with (torch.no_grad()):
         idx = -1
         for q, s, a in zip(questions, solutions, answers):
             idx += 1
@@ -238,7 +238,8 @@ for k, prompt_batch in enumerate(prompt_loader):
 
     torch.cuda.empty_cache()
     update_start = time.time()
-    with torch.autocast(device_type="cuda", dtype=torch.bfloat16, enabled=True):
+    if True:
+    # with torch.autocast(device_type="cuda", dtype=torch.bfloat16, enabled=True):
         loss_hist, kl_hist, entropy_hist = grpo_train_loop(model, optimizer, replay_buffer, grpo_config,method = method,**train_kwargs)
         print(f"Loss at step {k}", loss_hist[0])
         print(f"KL at step {k}", kl_hist[0])
