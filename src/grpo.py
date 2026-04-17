@@ -98,6 +98,7 @@ def grpo_loss(log_probs, advantages, action_mask, grpo_config: GRPOConfig, gen_p
         """Compute the GRPO loss.
         """
         if method:
+            print("VIS!")
             do_ref = True
             if gen_per_token_logps == None:
                 gen_per_token_logps = log_probs.detach()
@@ -142,7 +143,7 @@ def grpo_train_loop(model, optimizer, replay_buffer, grpo_config: GRPOConfig, re
     model.train()
     device = model.device
     mb_size = grpo_config.micro_batch_size
-    grad_accum_steps = (len(replay_buffer) * grpo_config.num_generations // mb_size)
+    grad_accum_steps = (len(replay_buffer) * replay_buffer[0].sequence_ids.shape[0] // mb_size)
     update_every = grad_accum_steps // grpo_config.steps_per_generation
     loss_hist = []
     tmp_loss_hist = []

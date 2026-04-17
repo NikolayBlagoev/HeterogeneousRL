@@ -22,6 +22,8 @@ def unpad_tensor(tensor: torch.Tensor, pad_token: int):
 
 def gather(out: torch.Tensor, rank, world_size, group = None):
     tensor_shapes = len(out.shape)
+    _ttype = out.dtype
+    out = out.float()
     _t1 = [torch.zeros(tensor_shapes,dtype = torch.long, device = out.device) for _ in range(world_size)]
     dist.all_gather(_t1,torch.tensor(list(out.shape), device = out.device), group=group)
     _t2 = [torch.zeros(_t1[id].tolist(), dtype = out.dtype, device = out.device) for id in range(world_size)]
@@ -29,6 +31,7 @@ def gather(out: torch.Tensor, rank, world_size, group = None):
     #     print(elm.shape,elm.dtype,elm.device)
     # print(out.shape,out.dtype,out.device)
     dist.all_gather(_t2,out.contiguous(), group=group)
+    _t2 = [el.to(_ttype) for el in _t2]
     return _t2
 
 
