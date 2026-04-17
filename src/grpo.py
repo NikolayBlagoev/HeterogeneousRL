@@ -66,8 +66,7 @@ def advantage_compute(rewards, std_scale = True):
 # computes the log probs
 def sequences_log_probs(model, sequence_ids, attention_mask, logits_to_keep=None, temperature = 1.0, batch_size = None, compute_entropy = False):
 
-    if batch_size == None:
-        batch_size = sequence_ids.shape[0]
+    batch_size = sequence_ids.shape[0]
     model_arg_logits = None
     if logits_to_keep != None:
         model_arg_logits = logits_to_keep + 1
@@ -76,7 +75,7 @@ def sequences_log_probs(model, sequence_ids, attention_mask, logits_to_keep=None
     for start in range(0,sequence_ids.shape[0], batch_size):
         _loc_sequence_ids = sequence_ids[start: start + batch_size]
         _loc_attention_mask = attention_mask[start: start + batch_size]
-        logits = model(input_ids=_loc_sequence_ids, attention_mask=_loc_attention_mask,use_cache=False,logits_to_keep=model_arg_logits).logits
+        logits = model(input_ids=_loc_sequence_ids, attention_mask=_loc_attention_mask,use_cache=False).logits
 
         # Remove last one (hallucinated)
         logits = logits[:, :-1, :]
