@@ -57,12 +57,12 @@ def generate_rollouts(model, tokenizer,  question : str, sys_prompt: str = None,
 
 
     sequence_ids = model.generate(**model_inputs, generation_config=generation_config)
-    sequence_ids = F.pad(sequence_ids, (0,768 - sequence_ids.shape[1]), "constant", pad_token_id)  # effectively zero padding
+    sequence_ids = F.pad(sequence_ids, (0,768 - sequence_ids.shape[1]), "constant", tokenizer.pad_token_id)  # effectively zero padding
     completions = tokenizer.batch_decode(
         sequence_ids[:, start_seq :], skip_special_tokens=True
     )
     action_mask = torch.zeros_like(sequence_ids, dtype=torch.bool)
     action_mask[:, start_seq :] = True
-    action_mask[sequence_ids == pad_token_id] = False
+    action_mask[sequence_ids == tokenizer.pad_token_id] = False
     action_mask = action_mask[:, 1:]
     return sequence_ids, action_mask, start_seq, completions
