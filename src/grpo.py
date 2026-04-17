@@ -106,7 +106,7 @@ def grpo_loss(log_probs, advantages, action_mask, grpo_config: GRPOConfig, gen_p
             coef_1 = torch.exp(log_probs - gen_per_token_logps.detach())
             if do_ref:
                 coef_2 = torch.clamp(coef_1, 1 - grpo_config.epsilon_low, 1 + grpo_config.epsilon_high)
-                per_token_loss = torch.min(-coef_1 * advantages, -coef_2 * advantages)
+                per_token_loss = -torch.min(coef_1 * advantages, coef_2 * advantages)
             else:
                 per_token_loss = -coef_1 * advantages
             if ref_log_probs != None:
@@ -122,7 +122,7 @@ def grpo_loss(log_probs, advantages, action_mask, grpo_config: GRPOConfig, gen_p
             coef_1 = torch.exp(log_probs - log_probs.detach())
             if do_ref:
                 coef_2 = torch.clamp(coef_1, 1 - grpo_config.epsilon_low, 1 + grpo_config.epsilon_high)
-                per_token_loss = torch.min(-coef_1 * advantages, -coef_2 * advantages)
+                per_token_loss = -torch.min(coef_1 * advantages, coef_2 * advantages)
             else:
                 per_token_loss = -coef_1 * advantages
             if ref_log_probs != None:

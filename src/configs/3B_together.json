@@ -6,6 +6,6 @@
         "Qwen/Qwen2.5-3B",
         "Qwen/Qwen2.5-Coder-3B"
     ],
-    "comm_style": "alone",
+    "comm_style": "horizontal",
     "train_kwargs": {}
 }
