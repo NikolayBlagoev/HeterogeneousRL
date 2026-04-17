@@ -57,7 +57,7 @@ tokenizer = AutoTokenizer.from_pretrained(model_name)
 tokenizer.pad_token = tokenizer.eos_token
 tokenizer.pad_token_id = tokenizer.eos_token_id
 pad_token_id = tokenizer.eos_token_id
-model = AutoModelForCausalLM.from_pretrained(model_name, device_map=device, dtype=torch.bfloat16)
+model = AutoModelForCausalLM.from_pretrained(model_name, device_map=device, dtype=torch.float32)
 
 model.generation_config.max_new_tokens = None
 optimizer = optim.Adam(model.parameters(), lr=lr)
