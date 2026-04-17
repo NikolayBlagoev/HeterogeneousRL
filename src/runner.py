@@ -67,7 +67,7 @@ train_kwargs = scenario["train_kwargs"]
 val_ds = scenario["val_loader"]
 val_loader = DataLoader(
     val_ds,
-    batch_size=4,
+    batch_size=16,
     shuffle=False,
     drop_last=True,
     pin_memory=False,
@@ -179,7 +179,7 @@ for k, prompt_batch in enumerate(prompt_loader):
     if k % 5 == 0:
         val_dl = iter(val_loader)
         rewards = 0
-        for _ in range(10):
+        for _ in range(4):
             val_batch = next(val_dl)
             q,s,a = data_interp(val_batch)
             chat_prompts = []
@@ -217,13 +217,13 @@ for k, prompt_batch in enumerate(prompt_loader):
             )
 
             start_seq = model_inputs["input_ids"].shape[1]
-            model_inputs["input_ids"] = model_inputs["input_ids"].repeat(1,4,1).squeeze(0)
-            model_inputs["attention_mask"] = model_inputs["attention_mask"].repeat(1,4,1).squeeze(0)
-            with (torch.no_grad(), torch.autocast(device_type="cuda", dtype=torch.bfloat16, enabled=True)):
+            model_inputs["input_ids"] = model_inputs["input_ids"]
+            model_inputs["attention_mask"] = model_inputs["attention_mask"]
+            with (torch.no_grad()):
                 completion_ids = model.generate(**model_inputs,generation_config = generation_config)
                 completion_ids = completion_ids[:, start_seq :]
                 completions = tokenizer.batch_decode(completion_ids, skip_special_tokens=True)
-                rewards += reward_func(completions,a)[0].mean().item() / 10
+                rewards += reward_func(completions,a)[0].mean().item() / 4
         print(f"Validation of step {k}: {rewards:.4f}")
 
 
