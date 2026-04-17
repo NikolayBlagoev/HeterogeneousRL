@@ -64,29 +64,27 @@ def advantage_compute(rewards, std_scale = True):
     return advantages
 
 # computes the log probs
-def sequences_log_probs(model, sequence_ids, attention_mask, logits_to_keep=None, temperature = 1.0, batch_size = None, compute_entropy = False):
+def sequences_log_probs(model, sequence_ids, attention_mask, start_seq=None, temperature = 1.0, batch_size = None, compute_entropy = False):
 
     if batch_size == None:
         batch_size = sequence_ids.shape[0]
-    model_arg_logits = None
-    if logits_to_keep != None:
-        model_arg_logits = logits_to_keep + 1
+
     out = []
     entropy_out = []
     for start in range(0,sequence_ids.shape[0], batch_size):
         _loc_sequence_ids = sequence_ids[start: start + batch_size]
         _loc_attention_mask = attention_mask[start: start + batch_size]
         logits = model(input_ids=_loc_sequence_ids, attention_mask=_loc_attention_mask,use_cache=False).logits
-
+        loss_mask = _loc_attention_mask[:, start_seq:].to(dtype=logits.dtype).contiguous()
         # Remove last one (hallucinated)
         logits = logits[:, :-1, :]
-        logits = logits[:, -logits_to_keep:, :]
-        targets = _loc_sequence_ids[:,-logits_to_keep:]
+        logits = logits[:, (start_seq-1):, :]
+        targets = _loc_sequence_ids[:,start_seq:]
         token_log_probs = per_token_log_probs(logits,targets)
         # take the attention mask from completion start onwards
-        loss_mask = _loc_attention_mask[:, -logits_to_keep:].to(dtype=logits.dtype).contiguous()
+        loss_mask = _loc_attention_mask[:, start_seq:].to(dtype=logits.dtype).contiguous()
 
-        out.append(token_log_probs)
+        out.append(token_log_probs * loss_mask + (1.0 - loss_mask) * torch.finfo(token_log_probs.dtype).min)
         if compute_entropy:
             entropy_out.append(compute_entropy_from_logits(logits,256))
     if compute_entropy:
@@ -169,7 +167,7 @@ def grpo_train_loop(model, optimizer, replay_buffer, grpo_config: GRPOConfig, re
             # Compute log probs
             log_probs, entropy = sequences_log_probs(
                         model, sequence_ids=exp.sequence_ids[rng[0]:rng[1],:], attention_mask=exp.attention_mask[rng[0]:rng[1],:],
-                        logits_to_keep=exp.logits_to_keep, compute_entropy = compute_entropy
+                        start_seq=exp.logits_to_keep, compute_entropy = True
             )
             # Use ref log probs to compute kl-divergence:
 
