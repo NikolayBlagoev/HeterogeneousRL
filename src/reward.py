@@ -67,24 +67,6 @@ def reward_answer_binary(completions,oracle_answer):
                 answer_reward[i] = 1
                 reward = 1
                 
-            
-        if "<think>" in completion and "</think>" in completion and completion.find("</think>") > completion.find("<think>"):
-            formatting_reward[i] += 0.5
-        else:
-            reward = 0
-
-        if len(re.findall(r"<answer>",completion)) > 1 or len(re.findall(r"</answer>",completion)) > 1:
-            reward = 0
-        
-        if len(re.findall(r"<think>",completion)) > 1 or len(re.findall(r"</think>",completion)) > 1:
-            reward = 0
-        
-        extract = re.search(r'</answer>\s?',completion)
-        if extract == None or extract.span()[1] != len(completion):
-            reward = 0
-
-            
-
         returns[i] = reward
     return returns, answer_reward, formatting_reward
 

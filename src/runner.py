@@ -58,7 +58,8 @@ tokenizer.pad_token = tokenizer.eos_token
 tokenizer.pad_token_id = tokenizer.eos_token_id
 pad_token_id = tokenizer.eos_token_id
 model = AutoModelForCausalLM.from_pretrained(model_name, device_map=device, dtype=torch.float32)
-
+ref_model = AutoModelForCausalLM.from_pretrained(model_name, device_map=device, dtype=torch.float32)
+ref_model.eval() 
 model.generation_config.max_new_tokens = None
 optimizer = optim.Adam(model.parameters(), lr=lr)
 
@@ -145,7 +146,12 @@ for k, prompt_batch in enumerate(prompt_loader):
 
                 completion_mask = attention_mask[:,start_seq:]
                 seq_log_probs = seq_log_probs[:,:max_l - start_seq]
-                exp = Experience(sequence_ids=sequence_ids,advantages=advantages,attention_mask=attention_mask,action_mask=completion_mask,start_ids=0, logits_to_keep=start_seq,gen_log_probs=seq_log_probs)
+                ref_log_probs, _ = sequences_log_probs(
+                        ref_model, sequence_ids=sequence_ids, attention_mask=attention_mask,
+                        start_seq=start_seq, batch_size=3
+                )
+                exp = Experience(sequence_ids=sequence_ids,advantages=advantages,attention_mask=attention_mask,ref_log_probs=ref_log_probs,
+                                action_mask=completion_mask,start_ids=0, logits_to_keep=start_seq,gen_log_probs=seq_log_probs)
                 replay_buffer.append(exp.to("cpu"))
             elif comm_style == "horizontal":   
                 sequence_ids = torch.cat(sequence_ids, dim = 0)
@@ -162,8 +168,12 @@ for k, prompt_batch in enumerate(prompt_loader):
 
                 completion_mask = attention_mask[:,start_seq:]
                 seq_log_probs = seq_log_probs[:,:max_l - start_seq]
-                
-                exp = Experience(sequence_ids=sequence_ids,advantages=advantages,attention_mask=attention_mask,action_mask=completion_mask,start_ids=0, logits_to_keep=start_seq,gen_log_probs=seq_log_probs)
+                ref_log_probs, _ = sequences_log_probs(
+                        ref_model, sequence_ids=sequence_ids, attention_mask=attention_mask,
+                        start_seq=start_seq, batch_size=3
+                )
+                exp = Experience(sequence_ids=sequence_ids,advantages=advantages,attention_mask=attention_mask,ref_log_probs=ref_log_probs,
+                            action_mask=completion_mask,start_ids=0, logits_to_keep=start_seq,gen_log_probs=seq_log_probs)
                 replay_buffer.append(exp.to("cpu"))
             print(len(replay_buffer))
 
@@ -178,7 +188,7 @@ for k, prompt_batch in enumerate(prompt_loader):
     if k % 5 == 0:
         val_dl = iter(val_loader)
         rewards = 0
-        for _ in range(4):
+        for _ in range(16):
             val_batch = next(val_dl)
             q,s,a = data_interp(val_batch)
             chat_prompts = []
@@ -222,7 +232,7 @@ for k, prompt_batch in enumerate(prompt_loader):
                 completion_ids = model.generate(**model_inputs,generation_config = generation_config)
                 completion_ids = completion_ids[:, start_seq :]
                 completions = tokenizer.batch_decode(completion_ids, skip_special_tokens=True)
-                rewards += reward_func(completions,a)[0].mean().item() / 4
+                rewards += reward_func(completions,a)[0].mean().item() / 16
         print(f"Validation of step {k}: {rewards:.4f}")
 
 

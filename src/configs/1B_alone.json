@@ -1,5 +1,6 @@
 {
     "task": "GSM8k",
+    "validation_task": "AIME",
     "group_size": 12,
     "batch_size": 16,
     "model_name": [

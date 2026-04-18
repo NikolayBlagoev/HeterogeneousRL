@@ -19,6 +19,7 @@ class Experience:
     start_ids: int
     logits_to_keep: int
     gen_log_probs: torch.Tensor
+    ref_log_probs: torch.Tensor
 
 
     def to(self, device: torch.device):
@@ -35,7 +36,7 @@ class GRPOConfig():
     num_generations: int | None = field(
         default = 12
     )
-    beta: float = 0
+    beta: float = 0.001
     epsilon: float = 0.2
     epsilon_low: float = None
     epsilon_high: float = None
@@ -128,14 +129,7 @@ def grpo_loss(log_probs, advantages, action_mask, grpo_config: GRPOConfig, gen_p
             
             coef_1 = torch.exp(log_probs - log_probs.detach())
             per_token_loss = -coef_1 * advantages
-            if ref_log_probs != None:
-                per_token_kl = (
-                    torch.exp(ref_log_probs - log_probs)
-                    - (ref_log_probs - log_probs)
-                    - 1
-                )
-
-                per_token_loss += grpo_config.beta * per_token_kl
+            
             if "tis" in method:
                 print("TIS")
                 r = torch.exp(log_probs.detach() - gen_per_token_logps.detach())
@@ -145,6 +139,14 @@ def grpo_loss(log_probs, advantages, action_mask, grpo_config: GRPOConfig, gen_p
                 per_token_loss = per_token_loss - c * advantages.detach()
             else:
                 print("NIS")
+            if ref_log_probs != None:
+                per_token_kl = (
+                    torch.exp(ref_log_probs - log_probs)
+                    - (ref_log_probs - log_probs)
+                    - 1
+                )
+
+                per_token_loss += grpo_config.beta * per_token_kl
                 
 
 
@@ -212,7 +214,7 @@ def grpo_train_loop(model, optimizer, replay_buffer, grpo_config: GRPOConfig, re
 
             action_mask = exp.action_mask[rng[0]:rng[1],:]
             advantages = exp.advantages[rng[0]:rng[1]]
-        
+            ref_log_probs = exp.ref_log_probs[rng[0]:rng[1],:]
                 
             start_ids = exp.start_ids
             if foreign:
@@ -223,8 +225,9 @@ def grpo_train_loop(model, optimizer, replay_buffer, grpo_config: GRPOConfig, re
                     gen_log_probs = torch.cat([gen_log_probs[:(i-idx),:],gen_log_probs[(1+i-idx):,:]])
                     advantages = torch.cat([advantages[:(i-idx)],advantages[(1+i-idx):]])
                     action_mask = torch.cat([action_mask[:(i-idx)],action_mask[(1+i-idx):]])
+                    ref_log_probs = torch.cat([ref_log_probs[:(i-idx)],ref_log_probs[(1+i-idx):]])
             
-            ref_log_probs = None
+            
             loss = grpo_loss(log_probs=log_probs, advantages=advantages, action_mask=action_mask,
                             grpo_config=grpo_config, ref_log_probs=ref_log_probs, gen_per_token_logps=gen_log_probs, method = method)
 
