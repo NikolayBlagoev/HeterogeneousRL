@@ -33,7 +33,7 @@ The assistant needs to provide a detailed step by step solution of the problem. 
 
 scenario = process_config(scenario,ds_seed,device_index=device_index)
 
-lr = 2e-6
+lr = 3e-6
 kl_weight = 0
 comm_style = scenario["comm_style"]
 group_size = scenario["group_size"]
