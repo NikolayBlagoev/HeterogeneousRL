@@ -142,7 +142,7 @@ def grpo_loss(log_probs, advantages, action_mask, grpo_config: GRPOConfig, gen_p
                 r = torch.clamp(r, max=2.0)
                 per_token_loss *= r
                 c = torch.clamp(r - 2.0, min=0.0)
-                per_token_loss = per_token_loss - correction * advantages.detach()
+                per_token_loss = per_token_loss - c * advantages.detach()
             else:
                 print("NIS")
                 
