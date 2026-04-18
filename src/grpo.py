@@ -91,8 +91,10 @@ def sequences_log_probs(model, sequence_ids, attention_mask, start_seq=None, tem
         loss_mask = _loc_attention_mask[:, start_seq:].to(dtype=logits.dtype).contiguous()
 
         out.append(token_log_probs * loss_mask + (1.0 - loss_mask) * torch.finfo(token_log_probs.dtype).min)
+        
         if compute_entropy:
-            entropy_out.append(compute_entropy_from_logits(logits,256))
+            with torch.no_grad():
+                entropy_out.append(compute_entropy_from_logits(logits,256))
     if compute_entropy:
         return torch.cat(out,dim=0), torch.cat(entropy_out,dim=0)
     else:
@@ -190,9 +192,12 @@ def grpo_train_loop(model, optimizer, replay_buffer, grpo_config: GRPOConfig, re
                     # print("need to drop",idx)
                     drop.append(idx)
             foreign = per_token_kl.mean().item() > 10
+            tmp_kl_hist.append(per_token_kl.mean().item())
+            tmp_entropy_hist.append(entropy.mean().item())
+            del entropy
+            del per_token_kl
             if foreign:
                 if len(drop) == (rng[1] - rng[0]):
-                    # print("size of drop",len(drop))
                     continue
 
             action_mask = exp.action_mask[rng[0]:rng[1],:]
@@ -207,10 +212,7 @@ def grpo_train_loop(model, optimizer, replay_buffer, grpo_config: GRPOConfig, re
                     gen_log_probs = torch.cat([gen_log_probs[:(i-idx),:],gen_log_probs[(1+i-idx):,:]])
                     advantages = torch.cat([advantages[:(i-idx)],advantages[(1+i-idx):]])
                     action_mask = torch.cat([action_mask[:(i-idx)],action_mask[(1+i-idx):]])
-            tmp_kl_hist.append(per_token_kl.mean().item())
-            tmp_entropy_hist.append(entropy.mean().item())
-            del entropy
-            del per_token_kl
+            
             ref_log_probs = None
             loss = grpo_loss(log_probs=log_probs, advantages=advantages, action_mask=action_mask,
                             grpo_config=grpo_config, ref_log_probs=ref_log_probs, gen_per_token_logps=gen_log_probs, method = method)
