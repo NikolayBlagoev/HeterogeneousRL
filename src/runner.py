@@ -102,7 +102,6 @@ for k, prompt_batch in enumerate(prompt_loader):
             idx += 1
             if comm_style == "vertical" and idx % world_size != device_index:
                 continue
-            print(q)
             gen_start = time.time()
             for _ in range(1):
                 sequence_ids, completion_mask, start_seq, completions = generate_rollouts(model=model, tokenizer=tokenizer, question=q, sys_prompt=system_prompt, num_rollouts=group_size)
