@@ -137,11 +137,14 @@ def grpo_loss(log_probs, advantages, action_mask, grpo_config: GRPOConfig, gen_p
 
                 per_token_loss += grpo_config.beta * per_token_kl
             if "tis" in method:
+                print("TIS")
                 r = torch.exp(log_probs.detach() - gen_per_token_logps.detach())
                 r = torch.clamp(r, max=2.0)
                 per_token_loss *= r
                 c = torch.clamp(r - 2.0, min=0.0)
                 per_token_loss = per_token_loss - correction * advantages.detach()
+            else:
+                print("NIS")
                 
 
 
@@ -201,6 +204,7 @@ def grpo_train_loop(model, optimizer, replay_buffer, grpo_config: GRPOConfig, re
             del entropy
             del per_token_kl
             if foreign:
+                print("filtering!")
                 if len(drop) == (rng[1] - rng[0]):
                     del log_probs
                     torch.cuda.empty_cache()
@@ -212,6 +216,7 @@ def grpo_train_loop(model, optimizer, replay_buffer, grpo_config: GRPOConfig, re
                 
             start_ids = exp.start_ids
             if foreign:
+                
                 for idx,i in enumerate(drop):
                     
                     log_probs = torch.cat([log_probs[:(i-idx),:],log_probs[(1+i-idx):,:]])
