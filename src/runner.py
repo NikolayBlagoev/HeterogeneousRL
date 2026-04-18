@@ -58,8 +58,7 @@ tokenizer.pad_token = tokenizer.eos_token
 tokenizer.pad_token_id = tokenizer.eos_token_id
 pad_token_id = tokenizer.eos_token_id
 model = AutoModelForCausalLM.from_pretrained(model_name, device_map=device, dtype=torch.float32)
-ref_model = AutoModelForCausalLM.from_pretrained(model_name, device_map=device, dtype=torch.float32)
-ref_model.eval() 
+ref_log_probs = None
 model.generation_config.max_new_tokens = None
 optimizer = optim.Adam(model.parameters(), lr=lr)
 
@@ -146,10 +145,7 @@ for k, prompt_batch in enumerate(prompt_loader):
 
                 completion_mask = attention_mask[:,start_seq:]
                 seq_log_probs = seq_log_probs[:,:max_l - start_seq]
-                ref_log_probs, _ = sequences_log_probs(
-                        ref_model, sequence_ids=sequence_ids, attention_mask=attention_mask,
-                        start_seq=start_seq, batch_size=3
-                )
+                
                 exp = Experience(sequence_ids=sequence_ids,advantages=advantages,attention_mask=attention_mask,ref_log_probs=ref_log_probs,
                                 action_mask=completion_mask,start_ids=0, logits_to_keep=start_seq,gen_log_probs=seq_log_probs)
                 replay_buffer.append(exp.to("cpu"))
@@ -168,10 +164,7 @@ for k, prompt_batch in enumerate(prompt_loader):
 
                 completion_mask = attention_mask[:,start_seq:]
                 seq_log_probs = seq_log_probs[:,:max_l - start_seq]
-                ref_log_probs, _ = sequences_log_probs(
-                        ref_model, sequence_ids=sequence_ids, attention_mask=attention_mask,
-                        start_seq=start_seq, batch_size=3
-                )
+               
                 exp = Experience(sequence_ids=sequence_ids,advantages=advantages,attention_mask=attention_mask,ref_log_probs=ref_log_probs,
                             action_mask=completion_mask,start_ids=0, logits_to_keep=start_seq,gen_log_probs=seq_log_probs)
                 replay_buffer.append(exp.to("cpu"))
