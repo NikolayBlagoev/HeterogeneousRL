@@ -236,22 +236,9 @@ def grpo_train_loop(model, optimizer, replay_buffer, grpo_config: GRPOConfig, re
             loss = loss / (update_every)
             tmp_loss_hist.append(loss.item())
             loss.backward()
-            if _steps % update_every == 0:
-                print("update")
-                if grpo_config.clip_gradient != None:
-                    clip_grad_norm_(model.parameters(), max_norm=grpo_config.clip_gradient)
-                optimizer.step()
-                optimizer.zero_grad()
-                torch.cuda.empty_cache()
-                loss_hist.append(sum(tmp_loss_hist)/len(tmp_loss_hist))
-                kl_hist.append(sum(tmp_kl_hist)/len(tmp_kl_hist))
-                if compute_entropy:
-                    entropy_hist.append(sum(tmp_entropy_hist)/len(tmp_entropy_hist))
-                tmp_entropy_hist.clear()
-                tmp_loss_hist.clear()
-                tmp_kl_hist.clear()
+            
         del exp
-    if _steps % update_every != 0:
+    if True:
         print("update")
         if grpo_config.clip_gradient != None:
             clip_grad_norm_(model.parameters(), max_norm=grpo_config.clip_gradient)
