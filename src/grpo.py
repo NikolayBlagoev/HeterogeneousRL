@@ -50,11 +50,16 @@ class GRPOConfig():
         return
 
 def per_token_log_probs(logits,targets,is_logits_log = False, mem_eff = True):
-    
-    if not is_logits_log:
-        logits = F.log_softmax(logits, dim=-1)
-    token_log_probs = logits.gather(dim=-1, index=targets.unsqueeze(-1)).squeeze(-1)
+    if mem_eff and logits.dtype in [torch.float32, torch.float64]:
+        selected_logits = torch.gather(logits, dim=-1, index=targets.unsqueeze(-1)).squeeze(-1) # Shape (B, L)
+        logsumexp_values = torch.stack([torch.logsumexp(lg, dim=-1) for lg in logits]) # Shape (B, L)
+        token_log_probs = selected_logits - logsumexp_values
+    else:
+        if not is_logits_log:
+            logits = F.log_softmax(logits, dim=-1)
+        token_log_probs = logits.gather(dim=-1, index=targets.unsqueeze(-1)).squeeze(-1)
     return token_log_probs
+    
 
 @torch.no_grad()
 def advantage_compute(rewards, std_scale = True):
