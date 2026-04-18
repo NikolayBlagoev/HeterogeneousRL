@@ -208,7 +208,7 @@ for k, prompt_batch in enumerate(prompt_loader):
             ).to(model.device)
             generation_config = GenerationConfig(
                 max_new_tokens=768,
-                do_sample=True,
+                do_sample=False,
                 pad_token_id=tokenizer.pad_token_id,
                 eos_token_id=tokenizer.eos_token_id,
                 temperature = 1.0,
