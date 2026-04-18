@@ -21,7 +21,7 @@ seed = 42
 ds_seed = 42
 
 device_index = int(argv[1])
-method = argv[2] == "vis"
+method = argv[2] # nis, vis or tis, with f-* for filtering (e.g. f-vis is filtered vis)
 scenario = argv[3]
 out_dir = argv[4]
 

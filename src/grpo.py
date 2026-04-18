@@ -100,10 +100,10 @@ def sequences_log_probs(model, sequence_ids, attention_mask, start_seq=None, tem
     else:
         return torch.cat(out,dim=0), None
 
-def grpo_loss(log_probs, advantages, action_mask, grpo_config: GRPOConfig, gen_per_token_logps = None, ref_log_probs = None, method = True):
+def grpo_loss(log_probs, advantages, action_mask, grpo_config: GRPOConfig, gen_per_token_logps = None, ref_log_probs = None, method = "nis"):
         """Compute the GRPO loss.
         """
-        if method:
+        if "vis" in method:
             print("VIS!")
             do_ref = True
             if gen_per_token_logps == None:
@@ -125,13 +125,9 @@ def grpo_loss(log_probs, advantages, action_mask, grpo_config: GRPOConfig, gen_p
 
                 per_token_loss += grpo_config.beta * per_token_kl
         else:
-            do_ref = False
+            
             coef_1 = torch.exp(log_probs - log_probs.detach())
-            if do_ref:
-                coef_2 = torch.clamp(coef_1, 1 - grpo_config.epsilon_low, 1 + grpo_config.epsilon_high)
-                per_token_loss = -torch.min(coef_1 * advantages, coef_2 * advantages)
-            else:
-                per_token_loss = -coef_1 * advantages
+            per_token_loss = -coef_1 * advantages
             if ref_log_probs != None:
                 per_token_kl = (
                     torch.exp(ref_log_probs - log_probs)
@@ -140,7 +136,10 @@ def grpo_loss(log_probs, advantages, action_mask, grpo_config: GRPOConfig, gen_p
                 )
 
                 per_token_loss += grpo_config.beta * per_token_kl
-            per_token_loss = torch.min(torch.ones_like(log_probs)*2, torch.exp(log_probs.detach() - gen_per_token_logps.detach())) * per_token_loss
+            if "tis" in method:
+                per_token_loss = torch.min(torch.ones_like(log_probs)*2, torch.exp(log_probs.detach() - gen_per_token_logps.detach())) * per_token_loss
+
+
         loss = (per_token_loss * action_mask).sum(dim=-1) / action_mask.sum(dim=-1)
         return loss.mean()
 
@@ -191,7 +190,7 @@ def grpo_train_loop(model, optimizer, replay_buffer, grpo_config: GRPOConfig, re
                 if adv <= 0:
                     # print("need to drop",idx)
                     drop.append(idx)
-            foreign = per_token_kl.mean().item() > 10
+            foreign = per_token_kl.mean().item() > 10 and "f-" in method
             tmp_kl_hist.append(per_token_kl.mean().item())
             tmp_entropy_hist.append(entropy.mean().item())
             del entropy
