@@ -122,7 +122,7 @@ for k, prompt_batch in enumerate(prompt_loader):
             
             seq_log_probs, _ = sequences_log_probs(
                         model, sequence_ids=sequence_ids, attention_mask=attention_mask,
-                        start_seq=start_seq
+                        start_seq=start_seq, batch_size=3
             )
 
             rollout_indv.append(returns)

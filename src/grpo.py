@@ -72,8 +72,9 @@ def sequences_log_probs(model, sequence_ids, attention_mask, start_seq=None, tem
     out = []
     entropy_out = []
     for start in range(0,sequence_ids.shape[0], batch_size):
-        _loc_sequence_ids = sequence_ids[start: start + batch_size]
-        _loc_attention_mask = attention_mask[start: start + batch_size]
+        end = min(sequence_ids.shape[0],start + batch_size)
+        _loc_sequence_ids = sequence_ids[start: end]
+        _loc_attention_mask = attention_mask[start: end]
         logits = model(input_ids=_loc_sequence_ids, attention_mask=_loc_attention_mask,use_cache=False).logits
         loss_mask = _loc_attention_mask[:, start_seq:].to(dtype=logits.dtype).contiguous()
         # Remove last one (hallucinated)
