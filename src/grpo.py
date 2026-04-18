@@ -198,6 +198,8 @@ def grpo_train_loop(model, optimizer, replay_buffer, grpo_config: GRPOConfig, re
             del per_token_kl
             if foreign:
                 if len(drop) == (rng[1] - rng[0]):
+                    del log_probs
+                    torch.cuda.empty_cache()
                     continue
 
             action_mask = exp.action_mask[rng[0]:rng[1],:]
@@ -207,16 +209,12 @@ def grpo_train_loop(model, optimizer, replay_buffer, grpo_config: GRPOConfig, re
             start_ids = exp.start_ids
             if foreign:
                 for idx,i in enumerate(drop):
-                    log_probs[i-idx:-1,] = log_probs[(1+i-idx):,:]
-                    advantages[i-idx:-1,] = advantages[(1+i-idx):,:]
-                    gen_log_probs[i-idx:-1,] = gen_log_probs[(1+i-idx):,:]
-                    action_mask[i-idx:-1,] = action_mask[(1+i-idx):,:]
                     
-
-            log_probs = log_probs[:-len(drop),]
-            advantages = advantages[:-len(drop),]
-            gen_log_probs = gen_log_probs[:-len(drop),]
-            action_mask = action_mask[:-len(drop),]
+                    log_probs = torch.cat([log_probs[:(i-idx),:],log_probs[(1+i-idx):,:]])
+                    gen_log_probs = torch.cat([gen_log_probs[:(i-idx),:],gen_log_probs[(1+i-idx):,:]])
+                    advantages = torch.cat([advantages[:(i-idx)],advantages[(1+i-idx):]])
+                    action_mask = torch.cat([action_mask[:(i-idx)],action_mask[(1+i-idx):]])
+            
             ref_log_probs = None
             loss = grpo_loss(log_probs=log_probs, advantages=advantages, action_mask=action_mask,
                             grpo_config=grpo_config, ref_log_probs=ref_log_probs, gen_per_token_logps=gen_log_probs, method = method)
