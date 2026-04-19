@@ -249,3 +249,5 @@ for k, prompt_batch in enumerate(prompt_loader):
     print(f"update time of step {k}: {time.time() - update_start}")
     # post_train(model, optimizer, replay_buffer, ref_model, kl_weight,group_size)
 model.save_pretrained(out_dir)
+print("MODEL SAVED")
+dist.barrier()

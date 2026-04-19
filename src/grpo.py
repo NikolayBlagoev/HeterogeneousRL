@@ -131,14 +131,14 @@ def grpo_loss(log_probs, advantages, action_mask, grpo_config: GRPOConfig, gen_p
             per_token_loss = -coef_1 * advantages
             
             if "btis" in method:
-                print("TIS")
+                print("BTIS")
                 r = torch.exp(log_probs.detach() - gen_per_token_logps.detach())
                 r = torch.clamp(r, max=2.0)
                 per_token_loss *= r
                 c = torch.clamp(r - 2.0, min=0.0)
                 per_token_loss = per_token_loss - c * advantages.detach()
             elif "tis" in method:
-                print("BTIS")
+                print("TIS")
                 r = torch.exp(log_probs.detach() - gen_per_token_logps.detach())
                 r = torch.clamp(r, max=2.0)
                 per_token_loss *= r
