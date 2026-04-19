@@ -225,7 +225,7 @@ def grpo_train_loop(model, optimizer, replay_buffer, grpo_config: GRPOConfig, re
                     gen_log_probs = torch.cat([gen_log_probs[:(i-idx),:],gen_log_probs[(1+i-idx):,:]])
                     advantages = torch.cat([advantages[:(i-idx)],advantages[(1+i-idx):]])
                     action_mask = torch.cat([action_mask[:(i-idx)],action_mask[(1+i-idx):]])
-                    
+                    # ref_log_probs = torch.cat([ref_log_probs[:(i-idx)],ref_log_probs[(1+i-idx):]])
             
             
             loss = grpo_loss(log_probs=log_probs, advantages=advantages, action_mask=action_mask,
