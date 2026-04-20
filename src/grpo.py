@@ -202,7 +202,9 @@ def grpo_train_loop(model, optimizer, replay_buffer, grpo_config: GRPOConfig, re
                     - (gen_log_probs - log_probs)
                     - 1
                 )
-                tmp_pkl = per_token_kl.mean(-1).tolist()
+                tmp_pkl = per_token_kl.mean(-1)
+                print(tmp_pkl.shape)
+                tmp_pkl = tmp_pkl.tolist()
             for idx,adv in enumerate(exp.advantages[rng[0]:rng[1]]):
                 adv = adv.item()
                 if adv <= 0 and tmp_pkl[idx] > 10:
