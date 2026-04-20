@@ -192,7 +192,7 @@ for k, prompt_batch in enumerate(prompt_loader):
                 seq_log_probs = seq_log_probs[:,:max_l - start_seq]
                 ref_log_probs = None
                 exp = Experience(sequence_ids=sequence_ids,advantages=advantages,attention_mask=attention_mask,ref_log_probs=ref_log_probs,
-                            action_mask=completion_mask,start_ids=0, logits_to_keep=start_seq,gen_log_probs=seq_log_probs)
+                            action_mask=completion_mask,start_ids=0, logits_to_keep=start_seq,gen_log_probs=seq_log_probs, step = k)
                 replay_buffer.append(exp.to("cpu"))
             print(len(replay_buffer))
 

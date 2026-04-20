@@ -161,7 +161,7 @@ def grpo_loss(log_probs, advantages, action_mask, grpo_config: GRPOConfig, gen_p
         return loss.mean()
 
 
-def grpo_train_loop(model, optimizer, replay_buffer, grpo_config: GRPOConfig, ref_model = None, compute_entropy = True, method = True, **loss_kwargs):
+def grpo_train_loop(model, optimizer, replay_buffer, grpo_config: GRPOConfig, ref_model = None, compute_entropy = True, method = True, step = 0, **loss_kwargs):
     model.train()
     device = model.device
     mb_size = grpo_config.micro_batch_size
@@ -207,7 +207,7 @@ def grpo_train_loop(model, optimizer, replay_buffer, grpo_config: GRPOConfig, re
                 tmp_pkl = tmp_pkl.tolist()
             for idx,adv in enumerate(exp.advantages[rng[0]:rng[1]]):
                 adv = adv.item()
-                if adv <= 0 and tmp_pkl[idx] > 50:
+                if adv <= 0 and tmp_pkl[idx] > 2+100*(50-step)/50:
                     # print("need to drop",idx)
                     drop.append(idx)
             foreign = "f-" in method and len(drop) > 0
