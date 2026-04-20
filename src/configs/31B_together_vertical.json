@@ -1,0 +1,11 @@
+{
+    "task": "GSM8k",
+    "group_size": 12,
+    "batch_size": 24,
+    "model_name": [
+        "Qwen/Qwen2.5-1.5B",
+        "Qwen/Qwen2.5-3B"
+    ],
+    "comm_style": "vertical",
+    "train_kwargs": {}
+}

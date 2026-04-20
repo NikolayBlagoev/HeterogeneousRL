@@ -127,13 +127,13 @@ for k, prompt_batch in enumerate(prompt_loader):
 
             rollout_indv.append(returns)
             returns = returns.to(device)
-            
+            global_start_seq = torch.tensor([start_seq],device = seq_log_probs.device)
             
             if comm_style != "alone" and world_size > 1:
                 seq_log_probs = gather(seq_log_probs,device_index,world_size)
                 attention_mask = gather(attention_mask,device_index,world_size)
                 returns = gather(returns,device_index,world_size)
-                
+                global_start_seq = gather(global_start_seq,device_index,world_size)
                 sequence_ids = gather(sequence_ids,device_index,world_size)
             
 
@@ -146,15 +146,30 @@ for k, prompt_batch in enumerate(prompt_loader):
 
                 completion_mask = attention_mask[:,start_seq:]
                 seq_log_probs = seq_log_probs[:,:max_l - start_seq]
-                # ref_log_probs, _ = sequences_log_probs(
-                #         ref_model, sequence_ids=sequence_ids, attention_mask=attention_mask,
-                #         start_seq=start_seq, batch_size=3
-                # )
                 ref_log_probs = None
                 exp = Experience(sequence_ids=sequence_ids,advantages=advantages,attention_mask=attention_mask,ref_log_probs=ref_log_probs,
                                 action_mask=completion_mask,start_ids=0, logits_to_keep=start_seq,gen_log_probs=seq_log_probs)
                 replay_buffer.append(exp.to("cpu"))
-            elif comm_style == "horizontal":   
+            elif comm_style == "vertical":
+                for loc_rank in range(world_size):
+                    loc_sequence_ids = sequence_ids[loc_rank]
+                    loc_attention_mask = attention_mask[loc_rank]
+                    
+                    loc_sequence_ids, max_l = unpad_tensor(loc_sequence_ids,tokenizer.pad_token_id)
+                    loc_attention_mask = loc_attention_mask[:,:max_l]
+                    start_seq = global_start_seq[loc_rank].item()
+                    
+                    loc_returns = returns[loc_rank]
+                    rollout_returns.append(loc_returns.to("cpu"))
+                    advantages = advantage_compute(loc_returns)
+                    loc_seq_log_probs = seq_log_probs[loc_rank]
+
+                    completion_mask = loc_attention_mask[:,start_seq:]
+                    loc_seq_log_probs = loc_seq_log_probs[:,:max_l - start_seq]
+                    ref_log_probs = None
+                    exp = Experience(sequence_ids=loc_sequence_ids,advantages=advantages,attention_mask=loc_attention_mask,ref_log_probs=ref_log_probs,
+                                action_mask=completion_mask,start_ids=0, logits_to_keep=start_seq,gen_log_probs=loc_seq_log_probs)
+                elif comm_style == "horizontal":   
                 sequence_ids = torch.cat(sequence_ids, dim = 0)
                 attention_mask = torch.cat(attention_mask, dim = 0)
                 
@@ -169,10 +184,6 @@ for k, prompt_batch in enumerate(prompt_loader):
 
                 completion_mask = attention_mask[:,start_seq:]
                 seq_log_probs = seq_log_probs[:,:max_l - start_seq]
-                # ref_log_probs, _ = sequences_log_probs(
-                #         ref_model, sequence_ids=sequence_ids, attention_mask=attention_mask,
-                #         start_seq=start_seq, batch_size=3
-                # )
                 ref_log_probs = None
                 exp = Experience(sequence_ids=sequence_ids,advantages=advantages,attention_mask=attention_mask,ref_log_probs=ref_log_probs,
                             action_mask=completion_mask,start_ids=0, logits_to_keep=start_seq,gen_log_probs=seq_log_probs)
