@@ -169,7 +169,7 @@ for k, prompt_batch in enumerate(prompt_loader):
                     ref_log_probs = None
                     exp = Experience(sequence_ids=loc_sequence_ids,advantages=advantages,attention_mask=loc_attention_mask,ref_log_probs=ref_log_probs,
                                 action_mask=completion_mask,start_ids=0, logits_to_keep=start_seq,gen_log_probs=loc_seq_log_probs)
-                elif comm_style == "horizontal":   
+            elif comm_style == "horizontal":   
                 sequence_ids = torch.cat(sequence_ids, dim = 0)
                 attention_mask = torch.cat(attention_mask, dim = 0)
                 
