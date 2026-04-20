@@ -202,12 +202,13 @@ def grpo_train_loop(model, optimizer, replay_buffer, grpo_config: GRPOConfig, re
                     - (gen_log_probs - log_probs)
                     - 1
                 )
+                tmp_pkl = per_token_kl.mean(-1).tolist()
             for idx,adv in enumerate(exp.advantages[rng[0]:rng[1]]):
                 adv = adv.item()
-                if adv <= 0:
+                if adv <= 0 and tmp_pkl[idx] > 10:
                     # print("need to drop",idx)
                     drop.append(idx)
-            foreign = per_token_kl.mean().item() > 10 and "f-" in method
+            foreign = "f-" in method and len(drop) > 0
             tmp_kl_hist.append(per_token_kl.mean().item())
             tmp_entropy_hist.append(entropy.mean().item())
             del entropy
