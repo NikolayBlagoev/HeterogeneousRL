@@ -96,7 +96,7 @@ for k, prompt_batch in enumerate(prompt_loader):
     questions, solutions, answers = data_interp(prompt_batch)
     generation_times = 0
     comm_times = 0
-    if k <= 15:
+    if k <= 10:
         comm_style = "horizontal"
         group_size = scenario["group_size"] // world_size
     else:
