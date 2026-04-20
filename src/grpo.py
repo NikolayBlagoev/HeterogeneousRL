@@ -207,7 +207,7 @@ def grpo_train_loop(model, optimizer, replay_buffer, grpo_config: GRPOConfig, re
                 tmp_pkl = tmp_pkl.tolist()
             for idx,adv in enumerate(exp.advantages[rng[0]:rng[1]]):
                 adv = adv.item()
-                if adv <= 0 and tmp_pkl[idx] > 25:
+                if adv <= 0 and tmp_pkl[idx] > 10:
                     # print("need to drop",idx)
                     drop.append(idx)
             foreign = "f-" in method and len(drop) > 0
