@@ -96,10 +96,10 @@ for k, prompt_batch in enumerate(prompt_loader):
     questions, solutions, answers = data_interp(prompt_batch)
     generation_times = 0
     comm_times = 0
-    if k <= 15:
-        comm_style = "horizontal"
-    else:
-        comm_style = "vertical"
+    # if k <= 15:
+    #     comm_style = "horizontal"
+    # else:
+    #     comm_style = "vertical"
     with (torch.no_grad()):
         idx = -1
         for q, s, a in zip(questions, solutions, answers):
