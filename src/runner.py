@@ -18,7 +18,7 @@ from datasets import load_dataset
 from interp_config import process_config
 from peft import LoraConfig
 
-peft_config = LoraConfig(task_type=task_type="CAUSAL_LM", inference_mode=False, r=128, lora_alpha=256, lora_dropout=0.1)
+peft_config = LoraConfig(task_type="CAUSAL_LM", inference_mode=False, r=128, lora_alpha=256, lora_dropout=0.1)
 seed = 42
 ds_seed = 42
 
