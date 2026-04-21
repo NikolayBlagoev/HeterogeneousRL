@@ -192,7 +192,7 @@ for k, prompt_batch in enumerate(prompt_loader):
                 seq_log_probs = seq_log_probs[:,:max_l - start_seq]
                 ref_log_probs = None
                 exp = Experience(sequence_ids=sequence_ids,advantages=advantages,attention_mask=attention_mask,ref_log_probs=ref_log_probs,
-                            action_mask=completion_mask,start_ids=0, logits_to_keep=start_seq,gen_log_probs=seq_log_probs, step = k)
+                            action_mask=completion_mask,start_ids=0, logits_to_keep=start_seq,gen_log_probs=seq_log_probs)
                 replay_buffer.append(exp.to("cpu"))
             print(len(replay_buffer))
 
@@ -259,7 +259,7 @@ for k, prompt_batch in enumerate(prompt_loader):
     update_start = time.time()
     if True:
     # with torch.autocast(device_type="cuda", dtype=torch.bfloat16, enabled=True):
-        loss_hist, kl_hist, entropy_hist = grpo_train_loop(model, optimizer, replay_buffer, grpo_config,method = method,**train_kwargs)
+        loss_hist, kl_hist, entropy_hist = grpo_train_loop(model, optimizer, replay_buffer, grpo_config,method = method, step = k, **train_kwargs)
         print(f"Loss at step {k}", loss_hist[0])
         print(f"KL at step {k}", kl_hist[0])
         print(f"ENTROPY at step {k}", entropy_hist[0])
