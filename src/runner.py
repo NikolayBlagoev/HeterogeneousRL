@@ -16,7 +16,9 @@ from generate_rollouts import generate_rollouts
 from grpo import sequences_log_probs, Experience,grpo_loss, grpo_train_loop, advantage_compute, GRPOConfig
 from datasets import load_dataset
 from interp_config import process_config
+from peft import LoraConfig
 
+peft_config = LoraConfig(task_type=task_type="CAUSAL_LM", inference_mode=False, r=128, lora_alpha=256, lora_dropout=0.1)
 seed = 42
 ds_seed = 42
 
@@ -57,9 +59,12 @@ tokenizer = AutoTokenizer.from_pretrained(model_name)
 tokenizer.pad_token = tokenizer.eos_token
 tokenizer.pad_token_id = tokenizer.eos_token_id
 pad_token_id = tokenizer.eos_token_id
-model = AutoModelForCausalLM.from_pretrained(model_name, device_map=device, dtype=torch.float32)
-# ref_model = AutoModelForCausalLM.from_pretrained(model_name, device_map=device, dtype=torch.float32)
-# ref_model.eval() 
+if "PEFT" in model_name:
+    model = AutoModelForCausalLM.from_pretrained(model_name[5:], device_map=device, dtype=torch.float32)
+    model = get_peft_model(model, peft_config)
+else:
+    model = AutoModelForCausalLM.from_pretrained(model_name, device_map=device, dtype=torch.float32)
+
 model.generation_config.max_new_tokens = None
 optimizer = optim.Adam(model.parameters(), lr=lr)
 

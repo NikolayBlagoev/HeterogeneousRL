@@ -1,0 +1,11 @@
+{
+    "task": "GSM8k",
+    "validation_task": "AIME",
+    "group_size": 12,
+    "batch_size": 24,
+    "model_name": [
+        "PEFT-Qwen/Qwen2.5-3B"
+    ],
+    "comm_style": "alone",
+    "train_kwargs": {}
+}
