@@ -16,7 +16,7 @@ from generate_rollouts import generate_rollouts
 from grpo import sequences_log_probs, Experience,grpo_loss, grpo_train_loop, advantage_compute, GRPOConfig
 from datasets import load_dataset
 from interp_config import process_config
-from peft import LoraConfig
+from peft import LoraConfig, get_peft_model
 
 peft_config = LoraConfig(task_type="CAUSAL_LM", inference_mode=False, r=128, lora_alpha=256, lora_dropout=0.1)
 seed = 42
