@@ -8,7 +8,7 @@ from typing import Any, Iterator, Optional,List
 import torch.optim as optim
 from utils import compute_entropy_from_logits
 from torch.nn.utils import clip_grad_norm_
-
+import math
 
 @dataclass
 class Experience:
@@ -207,7 +207,7 @@ def grpo_train_loop(model, optimizer, replay_buffer, grpo_config: GRPOConfig, re
                 tmp_pkl = tmp_pkl.tolist()
             for idx,adv in enumerate(exp.advantages[rng[0]:rng[1]]):
                 adv = adv.item()
-                if adv <= 0 and tmp_pkl[idx] > 5+45*(step)/50:
+                if adv <= 0 and tmp_pkl[idx] > 5+45*(1-math.exp(-step/4)):
                     # print("need to drop",idx)
                     drop.append(idx)
             foreign = "f-" in method and len(drop) > 0
