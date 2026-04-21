@@ -55,14 +55,19 @@ model_name = scenario["model_name"]
 reward_func = scenario["reward_func"]
 
 device = f"cuda:{device_index}"
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-tokenizer.pad_token = tokenizer.eos_token
-tokenizer.pad_token_id = tokenizer.eos_token_id
-pad_token_id = tokenizer.eos_token_id
+
 if "PEFT" in model_name:
     model = AutoModelForCausalLM.from_pretrained(model_name[5:], device_map=device, dtype=torch.float32)
+    tokenizer = AutoTokenizer.from_pretrained(model_name[5:])
+    tokenizer.pad_token = tokenizer.eos_token
+    tokenizer.pad_token_id = tokenizer.eos_token_id
+    pad_token_id = tokenizer.eos_token_id
     model = get_peft_model(model, peft_config)
 else:
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    tokenizer.pad_token = tokenizer.eos_token
+    tokenizer.pad_token_id = tokenizer.eos_token_id
+    pad_token_id = tokenizer.eos_token_id
     model = AutoModelForCausalLM.from_pretrained(model_name, device_map=device, dtype=torch.float32)
 
 model.generation_config.max_new_tokens = None
