@@ -18,7 +18,7 @@ from datasets import load_dataset
 from interp_config import process_config
 from peft import LoraConfig, get_peft_model
 
-peft_config = LoraConfig(task_type="CAUSAL_LM", inference_mode=False, r=128, lora_alpha=256, lora_dropout=0.1)
+peft_config = LoraConfig(task_type="CAUSAL_LM", inference_mode=False, r=128, lora_alpha=256, lora_dropout=0.0)
 seed = 42
 ds_seed = 42
 
@@ -36,6 +36,7 @@ The assistant needs to provide a detailed step by step solution of the problem. 
 scenario = process_config(scenario,ds_seed,device_index=device_index)
 
 lr = 1e-6
+
 kl_weight = 0
 comm_style = scenario["comm_style"]
 group_size = scenario["group_size"]
@@ -63,15 +64,19 @@ if "PEFT" in model_name:
     tokenizer.pad_token_id = tokenizer.eos_token_id
     pad_token_id = tokenizer.eos_token_id
     model = get_peft_model(model, peft_config)
+    model.print_trainable_parameters()
+    lr = 1e-4
+    optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=lr)
 else:
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     tokenizer.pad_token = tokenizer.eos_token
     tokenizer.pad_token_id = tokenizer.eos_token_id
     pad_token_id = tokenizer.eos_token_id
     model = AutoModelForCausalLM.from_pretrained(model_name, device_map=device, dtype=torch.float32)
+    optimizer = optim.Adam(model.parameters(), lr=lr)
 
-model.generation_config.max_new_tokens = None
-optimizer = optim.Adam(model.parameters(), lr=lr)
+
+    
 
 train_dataset = scenario["dl_benign"]
 train_kwargs = scenario["train_kwargs"]
@@ -215,6 +220,7 @@ for k, prompt_batch in enumerate(prompt_loader):
     episode_reward = torch.stack(rollout_indv).mean()
     print(f"idividual returns of step {k}: {episode_reward:.4f}")
     if k % 5 == 0:
+        model.eval()
         val_dl = iter(val_loader)
         rewards = 0
         for _ in range(32):
