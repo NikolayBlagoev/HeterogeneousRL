@@ -75,7 +75,7 @@ else:
     model = AutoModelForCausalLM.from_pretrained(model_name, device_map=device, dtype=torch.float32)
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
-
+model.generation_config.max_new_tokens = None
     
 
 train_dataset = scenario["dl_benign"]
